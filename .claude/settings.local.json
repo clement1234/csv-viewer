@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(yarn install:*)",
+      "Bash(yarn add:*)",
+      "Bash(yarn type-check:*)",
+      "Bash(yarn lint:*)",
+      "Bash(./node_modules/.bin/tsc:*)",
+      "Bash(yarn tsc:*)",
+      "Bash(yarn run type-check:*)",
+      "Bash(echo:*)",
+      "Bash(node -e \"const {execSync} = require\\(''child_process''\\); try { execSync\\(''yarn type-check'', {stdio:''pipe''}\\); console.log\\(''OK''\\); } catch\\(e\\) { console.log\\(e.stdout?.toString\\(\\)\\); console.log\\(e.stderr?.toString\\(\\)\\); }\")",
+      "Bash(npx -y tsc:*)",
+      "Bash(node ./node_modules/.bin/tsc:*)",
+      "Bash(node -e \"const cp = require\\(''child_process''\\); const r = cp.spawnSync\\(''node_modules/.bin/tsc'', [''--noEmit''], {encoding:''utf8''}\\); console.log\\(''STDOUT:'', r.stdout\\); console.log\\(''STDERR:'', r.stderr\\); console.log\\(''STATUS:'', r.status\\);\")",
+      "Bash(test:*)",
+      "Bash(yarn validate:*)"
+    ]
+  }
+}
