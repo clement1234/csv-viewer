@@ -11,11 +11,10 @@ import { applyConfigToSchemaAndData } from '../lib/schema/config-applicator.ts';
 import { applyAllFiltersToDataRows } from '../lib/data/filters.ts';
 import { sortDataRowsByColumn } from '../lib/data/sorting.ts';
 import { useFilters } from './useFilters.ts';
+import type { FilterUpdatePayload } from './useFilters.ts';
 import { usePagination } from './usePagination.ts';
 import { useToast } from './useToast.ts';
 import type { PaginationState } from '../types/ui.types.ts';
-
-type FilterUpdatePayload = Parameters<ReturnType<typeof useFilters>['updateFilter']>[0];
 
 interface UsePaginationReturn {
   currentPage: number;

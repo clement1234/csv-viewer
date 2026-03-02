@@ -1,12 +1,16 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import type { DataRow } from '../../types/core.types.ts';
 import type { StatsPanelConfig } from '../../types/config.types.ts';
+import type { FilterState } from '../../types/ui.types.ts';
+import { isStatValueActiveInFilters } from '../../lib/data/stats-filter-mapping.ts';
 import { parseDateStringToDateObject } from '../../lib/utils/date-utils.ts';
 import { splitStringBySeparator } from '../../lib/utils/string-utils.ts';
 
 interface StatsPanelsProps {
   panels: StatsPanelConfig[];
   rows: DataRow[];
+  filterState: FilterState;
+  onStatValueClick: (panelType: StatsPanelConfig['type'], columnName: string, clickedValue: string) => void;
 }
 
 type CountMap = Map<string, number>;
@@ -68,8 +72,24 @@ function sortedEntries(countMap: CountMap): [string, number][] {
   return [...countMap.entries()].sort((entryA, entryB) => entryB[1] - entryA[1]);
 }
 
-function PanelTable({ label, data }: { label: string; data: CountMap }): React.JSX.Element {
+interface PanelTableProps {
+  label: string;
+  data: CountMap;
+  panelType: StatsPanelConfig['type'];
+  columnName: string;
+  filterState: FilterState;
+  onValueClick: (value: string) => void;
+}
+
+function PanelTable({ label, data, panelType, columnName, filterState, onValueClick }: PanelTableProps): React.JSX.Element {
   const entries = useMemo(() => sortedEntries(data), [data]);
+
+  const handleRowKeyDown = useCallback((event: React.KeyboardEvent, value: string): void => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onValueClick(value);
+    }
+  }, [onValueClick]);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -78,19 +98,33 @@ function PanelTable({ label, data }: { label: string; data: CountMap }): React.J
       </h3>
       <table className="w-full text-sm">
         <tbody>
-          {entries.map(([value, count]) => (
-            <tr key={value} className="border-b border-gray-100 last:border-b-0">
-              <td className="px-4 py-2 text-gray-700">{value}</td>
-              <td className="px-4 py-2 text-right font-medium text-gray-900">{count}</td>
-            </tr>
-          ))}
+          {entries.map(([value, count]) => {
+            const isActive = isStatValueActiveInFilters(panelType, columnName, value, filterState);
+            return (
+              <tr
+                key={value}
+                role="button"
+                tabIndex={0}
+                onClick={() => onValueClick(value)}
+                onKeyDown={(event) => handleRowKeyDown(event, value)}
+                className={`border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors ${
+                  isActive
+                    ? 'bg-blue-100 font-semibold text-blue-800'
+                    : 'hover:bg-blue-50'
+                }`}
+              >
+                <td className="px-4 py-2">{value}</td>
+                <td className="px-4 py-2 text-right font-medium">{count}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
 }
 
-export function StatsPanels({ panels, rows }: StatsPanelsProps): React.JSX.Element | null {
+export function StatsPanels({ panels, rows, filterState, onStatValueClick }: StatsPanelsProps): React.JSX.Element | null {
   const panelDataList = useMemo(
     () => panels.map((panel) => computePanelData(panel, rows)),
     [panels, rows],
@@ -101,7 +135,15 @@ export function StatsPanels({ panels, rows }: StatsPanelsProps): React.JSX.Eleme
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {panels.map((panel, panelIndex) => (
-        <PanelTable key={panel.label} label={panel.label} data={panelDataList[panelIndex]} />
+        <PanelTable
+          key={panel.label}
+          label={panel.label}
+          data={panelDataList[panelIndex]}
+          panelType={panel.type}
+          columnName={panel.column}
+          filterState={filterState}
+          onValueClick={(value) => onStatValueClick(panel.type, panel.column, value)}
+        />
       ))}
     </div>
   );

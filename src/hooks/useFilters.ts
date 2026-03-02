@@ -10,7 +10,7 @@ import type {
   GlobalSearchFilter,
 } from '../types/ui.types.ts';
 
-type FilterUpdatePayload =
+export type FilterUpdatePayload =
   | { type: 'globalSearch'; filter: GlobalSearchFilter }
   | { type: 'text'; filter: TextFilter }
   | { type: 'category'; filter: CategoryFilter }

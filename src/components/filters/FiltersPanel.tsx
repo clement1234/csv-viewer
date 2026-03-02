@@ -1,16 +1,8 @@
 import { useState } from 'react';
 import type { DataRow, InferredColumnSchema } from '../../types/core.types.ts';
 import type { Config } from '../../types/config.types.ts';
-import type {
-  FilterState,
-  GlobalSearchFilter,
-  TextFilter as TextFilterType,
-  CategoryFilter as CategoryFilterType,
-  DateRangeFilter as DateRangeFilterType,
-  NumberRangeFilter as NumberRangeFilterType,
-  BooleanFilter as BooleanFilterType,
-  MultiSelectFilter as MultiSelectFilterType,
-} from '../../types/ui.types.ts';
+import type { FilterState } from '../../types/ui.types.ts';
+import type { FilterUpdatePayload } from '../../hooks/useFilters.ts';
 import { FilterIcon, ChevronDownIcon, ChevronUpIcon, SearchIcon } from '../ui/Icons.tsx';
 import { Button } from '../ui/Button.tsx';
 import { TextFilter } from './TextFilter.tsx';
@@ -18,15 +10,6 @@ import { CategoryFilter } from './CategoryFilter.tsx';
 import { DateRangeFilter } from './DateRangeFilter.tsx';
 import { NumberRangeFilter } from './NumberRangeFilter.tsx';
 import { BooleanFilter } from './BooleanFilter.tsx';
-
-type FilterUpdatePayload =
-  | { type: 'globalSearch'; filter: GlobalSearchFilter }
-  | { type: 'text'; filter: TextFilterType }
-  | { type: 'category'; filter: CategoryFilterType }
-  | { type: 'dateRange'; filter: DateRangeFilterType }
-  | { type: 'numberRange'; filter: NumberRangeFilterType }
-  | { type: 'boolean'; filter: BooleanFilterType }
-  | { type: 'multiSelect'; filter: MultiSelectFilterType };
 
 interface FiltersPanelProps {
   schema: InferredColumnSchema[];

@@ -19,7 +19,8 @@
       "Bash(yarn vitest run:*)",
       "Bash(npx vitest run:*)",
       "Bash(npx tsc:*)",
-      "Bash(yarn build:*)"
+      "Bash(yarn build:*)",
+      "Bash(yarn test:*)"
     ]
   }
 }

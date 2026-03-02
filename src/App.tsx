@@ -13,7 +13,9 @@ import { StatsCards } from './components/stats/StatsCards.tsx';
 import { StatsPanels } from './components/stats/StatsPanels.tsx';
 import { DownloadIcon } from './components/ui/Icons.tsx';
 import { exportDataRowsToCSVFile } from './lib/data/export.ts';
+import { buildFilterPayloadFromStatClick } from './lib/data/stats-filter-mapping.ts';
 import type { DataRow } from './types/core.types.ts';
+import type { StatsPanelConfig } from './types/config.types.ts';
 
 const ACCEPTED_DATA_FILE_TYPES = ['.csv', '.xlsx', '.xls'];
 const ACCEPTED_CONFIG_FILE_TYPES = ['.json'];
@@ -42,6 +44,26 @@ function App(): React.JSX.Element {
     );
     addToast('success', 'Export CSV téléchargé');
   }, [filteredData, visibleColumns, appliedConfig, addToast]);
+
+  const handleStatValueClick = useCallback((
+    panelType: StatsPanelConfig['type'],
+    columnName: string,
+    clickedValue: string,
+  ): void => {
+    const payload = buildFilterPayloadFromStatClick(
+      { panelType, columnName, clickedValue },
+      filterState,
+    );
+    updateFilter(payload);
+  }, [filterState, updateFilter]);
+
+  const handleStatsCardClick = useCallback((column: string, value: string): void => {
+    const payload = buildFilterPayloadFromStatClick(
+      { panelType: 'countByColumn', columnName: column, clickedValue: value },
+      filterState,
+    );
+    updateFilter(payload);
+  }, [filterState, updateFilter]);
 
   const isDataLoaded = parsedData.length > 0;
   const appTitle = appliedConfig?.app?.title ?? 'CSV/Excel Viewer';
@@ -129,12 +151,22 @@ function App(): React.JSX.Element {
 
           {/* Stats Cards */}
           {appliedConfig?.stats?.cards && (
-            <StatsCards cards={appliedConfig.stats.cards} rows={filteredData} />
+            <StatsCards
+              cards={appliedConfig.stats.cards}
+              rows={filteredData}
+              filterState={filterState}
+              onCardClick={handleStatsCardClick}
+            />
           )}
 
           {/* Stats Panels */}
           {appliedConfig?.stats?.panels && (
-            <StatsPanels panels={appliedConfig.stats.panels} rows={filteredData} />
+            <StatsPanels
+              panels={appliedConfig.stats.panels}
+              rows={parsedData}
+              filterState={filterState}
+              onStatValueClick={handleStatValueClick}
+            />
           )}
 
           {/* Filters Panel */}
