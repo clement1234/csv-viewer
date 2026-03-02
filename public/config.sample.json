@@ -1,0 +1,82 @@
+{
+  "app": {
+    "title": "Gestion des Membres",
+    "subtitle": "Base de données des membres de l'association"
+  },
+  "columns": {
+    "defaultVisible": ["nom", "prenom", "email", "ville", "statut", "tags"],
+    "labels": {
+      "nom": "Nom",
+      "prenom": "Prénom",
+      "email": "Email",
+      "ville": "Ville",
+      "date_inscription": "Date d'inscription",
+      "age": "Âge",
+      "montant": "Montant (€)",
+      "statut": "Statut",
+      "newsletter": "Newsletter",
+      "tags": "Technologies"
+    },
+    "formats": {
+      "date_inscription": {
+        "type": "date",
+        "inputFormat": "YYYY-MM-DD",
+        "outputFormat": "DD/MM/YYYY"
+      },
+      "statut": {
+        "type": "badge",
+        "map": {
+          "actif": { "color": "#10b981", "variant": "solid" },
+          "inactif": { "color": "#ef4444", "variant": "solid" },
+          "suspendu": { "color": "#f59e0b", "variant": "outline" }
+        }
+      },
+      "tags": {
+        "type": "splitBadges",
+        "separator": "|"
+      },
+      "email": {
+        "type": "link",
+        "linkType": "mailto"
+      }
+    }
+  },
+  "filters": {
+    "globalSearchColumns": ["nom", "prenom", "email", "ville"],
+    "text": ["nom", "prenom"],
+    "dropdown": ["statut", "ville"],
+    "dateRange": ["date_inscription"],
+    "numberRange": ["age", "montant"],
+    "boolean": ["newsletter"]
+  },
+  "stats": {
+    "cards": [
+      { "type": "count", "label": "Total membres" },
+      { "type": "countWhere", "label": "Membres actifs", "column": "statut", "value": "actif" },
+      { "type": "countWhere", "label": "Inscrits newsletter", "column": "newsletter", "value": "oui" }
+    ],
+    "panels": [
+      { "type": "countByColumn", "column": "statut", "label": "Répartition par statut" },
+      { "type": "countByColumn", "column": "ville", "label": "Répartition par ville" },
+      { "type": "countByYearFromDate", "column": "date_inscription", "label": "Inscriptions par année" },
+      { "type": "countBySplitValues", "column": "tags", "label": "Technologies utilisées" }
+    ]
+  },
+  "detailModal": {
+    "titleTemplate": "{{prenom}} {{nom}}",
+    "sections": [
+      {
+        "title": "Informations personnelles",
+        "fields": ["nom", "prenom", "email", "ville", "age"]
+      },
+      {
+        "title": "Adhésion",
+        "fields": ["date_inscription", "statut", "montant", "newsletter"]
+      },
+      {
+        "title": "Compétences",
+        "fields": ["tags"]
+      }
+    ]
+  }
+}

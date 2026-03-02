@@ -15,7 +15,11 @@
       "Bash(node ./node_modules/.bin/tsc:*)",
       "Bash(node -e \"const cp = require\\(''child_process''\\); const r = cp.spawnSync\\(''node_modules/.bin/tsc'', [''--noEmit''], {encoding:''utf8''}\\); console.log\\(''STDOUT:'', r.stdout\\); console.log\\(''STDERR:'', r.stderr\\); console.log\\(''STATUS:'', r.status\\);\")",
       "Bash(test:*)",
-      "Bash(yarn validate:*)"
+      "Bash(yarn validate:*)",
+      "Bash(yarn vitest run:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(yarn build:*)"
     ]
   }
 }
