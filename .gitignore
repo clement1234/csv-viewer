@@ -15,9 +15,6 @@ dist
 dist-ssr
 *.local
 
-# Dev files (Vite serves index.html, should NOT be committed)
-index.html
-
 # Editor
 .vscode/*
 !.vscode/extensions.json
