@@ -20,7 +20,11 @@
       "Bash(npx vitest run:*)",
       "Bash(npx tsc:*)",
       "Bash(yarn build:*)",
-      "Bash(yarn test:*)"
+      "Bash(yarn test:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }
