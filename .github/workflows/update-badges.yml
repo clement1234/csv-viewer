@@ -1,6 +1,8 @@
 name: Update README Badges
 
 on:
+  push:
+    branches: [main]
   schedule:
     # Run daily at 02:00 UTC
     - cron: '0 2 * * *'
@@ -19,6 +21,8 @@ jobs:
   update-badges:
     name: Generate & Update Badges
     runs-on: ubuntu-latest
+    # Skip if commit is from github-actions bot (prevents infinite loops)
+    if: github.actor != 'github-actions[bot]'
 
     steps:
       - name: Checkout repository
