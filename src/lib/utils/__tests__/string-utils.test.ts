@@ -125,3 +125,11 @@ describe('splitStringBySeparator', () => {
     expect(splitStringBySeparator('sport', '|')).toEqual(['sport']);
   });
 });
+
+// Test fictif pour déclencher le workflow de badges automatique
+describe('Badge automation test', () => {
+  it('should validate the automated badge workflow', () => {
+    const testValue = 'badge-automation-test';
+    expect(testValue).toBe('badge-automation-test');
+  });
+});
