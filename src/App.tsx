@@ -113,6 +113,11 @@ function App(): React.JSX.Element {
               {appSubtitle && <p className="text-sm text-gray-500">{appSubtitle}</p>}
             </div>
             <div className="flex items-center gap-2">
+              {activeFiltersCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={resetFilters}>
+                  Réinitialiser les filtres ({activeFiltersCount})
+                </Button>
+              )}
               <FilePicker
                 onFileSelected={handleConfigFileUpload}
                 acceptedFileTypes={ACCEPTED_CONFIG_FILE_TYPES}
@@ -163,7 +168,8 @@ function App(): React.JSX.Element {
           {appliedConfig?.stats?.panels && (
             <StatsPanels
               panels={appliedConfig.stats.panels}
-              rows={parsedData}
+              allRows={parsedData}
+              filteredRows={filteredData}
               filterState={filterState}
               onStatValueClick={handleStatValueClick}
             />

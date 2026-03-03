@@ -47,7 +47,9 @@
       "Bash(/usr/local/bin/gh pr create --title \"chore: update README badges\" --body \"Automated badge update: 362 tests, 82.02% coverage\" --base main --head chore/badges-update-20260303-112809)",
       "Bash(/opt/homebrew/bin/gh pr create --title \"chore: update README badges\" --body \"Automated badge update: 362 tests, 82.02% coverage\" --base main --head chore/badges-update-20260303-112809)",
       "Bash(git fetch:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(gh repo view:*)",
+      "Bash(yarn lint)"
     ]
   }
 }

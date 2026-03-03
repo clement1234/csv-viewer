@@ -8,12 +8,14 @@ import { splitStringBySeparator } from '../../lib/utils/string-utils.ts';
 
 interface StatsPanelsProps {
   panels: StatsPanelConfig[];
-  rows: DataRow[];
+  allRows: DataRow[];
+  filteredRows: DataRow[];
   filterState: FilterState;
   onStatValueClick: (panelType: StatsPanelConfig['type'], columnName: string, clickedValue: string) => void;
 }
 
 type CountMap = Map<string, number>;
+type CountDisplay = number | '-';
 
 function countByColumnValues(rows: DataRow[], column: string): CountMap {
   const counts: CountMap = new Map();
@@ -68,13 +70,17 @@ function computePanelData(panel: StatsPanelConfig, rows: DataRow[]): CountMap {
   }
 }
 
-function sortedEntries(countMap: CountMap): [string, number][] {
-  return [...countMap.entries()].sort((entryA, entryB) => entryB[1] - entryA[1]);
+function sortedEntries(countMap: Map<string, CountDisplay>): [string, CountDisplay][] {
+  return [...countMap.entries()].sort((entryA, entryB) => {
+    const aVal = entryA[1] === '-' ? 0 : entryA[1];
+    const bVal = entryB[1] === '-' ? 0 : entryB[1];
+    return bVal - aVal;
+  });
 }
 
 interface PanelTableProps {
   label: string;
-  data: CountMap;
+  data: Map<string, CountDisplay>;
   panelType: StatsPanelConfig['type'];
   columnName: string;
   filterState: FilterState;
@@ -124,10 +130,21 @@ function PanelTable({ label, data, panelType, columnName, filterState, onValueCl
   );
 }
 
-export function StatsPanels({ panels, rows, filterState, onStatValueClick }: StatsPanelsProps): React.JSX.Element | null {
+export function StatsPanels({ panels, allRows, filteredRows, filterState, onStatValueClick }: StatsPanelsProps): React.JSX.Element | null {
   const panelDataList = useMemo(
-    () => panels.map((panel) => computePanelData(panel, rows)),
-    [panels, rows],
+    () => panels.map((panel) => {
+      const allValuesMap = computePanelData(panel, allRows);
+      const filteredValuesMap = computePanelData(panel, filteredRows);
+
+      const mergedMap: Map<string, CountDisplay> = new Map();
+      for (const [value] of allValuesMap) {
+        const filteredCount = filteredValuesMap.get(value) ?? 0;
+        mergedMap.set(value, filteredCount === 0 ? '-' : filteredCount);
+      }
+
+      return mergedMap;
+    }),
+    [panels, allRows, filteredRows],
   );
 
   if (panels.length === 0) return null;

@@ -34,7 +34,8 @@ describe('StatsPanels', () => {
     render(
       <StatsPanels
         panels={panels}
-        rows={sampleRows}
+        allRows={sampleRows}
+        filteredRows={sampleRows}
         filterState={createEmptyFilterState()}
         onStatValueClick={noopClick}
       />,
@@ -53,7 +54,8 @@ describe('StatsPanels', () => {
     render(
       <StatsPanels
         panels={panels}
-        rows={sampleRows}
+        allRows={sampleRows}
+        filteredRows={sampleRows}
         filterState={createEmptyFilterState()}
         onStatValueClick={noopClick}
       />,
@@ -71,7 +73,8 @@ describe('StatsPanels', () => {
     render(
       <StatsPanels
         panels={panels}
-        rows={sampleRows}
+        allRows={sampleRows}
+        filteredRows={sampleRows}
         filterState={createEmptyFilterState()}
         onStatValueClick={noopClick}
       />,
@@ -86,7 +89,8 @@ describe('StatsPanels', () => {
     const { container } = render(
       <StatsPanels
         panels={[]}
-        rows={sampleRows}
+        allRows={sampleRows}
+        filteredRows={sampleRows}
         filterState={createEmptyFilterState()}
         onStatValueClick={noopClick}
       />,
@@ -103,7 +107,8 @@ describe('StatsPanels', () => {
     render(
       <StatsPanels
         panels={panels}
-        rows={sampleRows}
+        allRows={sampleRows}
+        filteredRows={sampleRows}
         filterState={createEmptyFilterState()}
         onStatValueClick={handleClick}
       />,
@@ -121,7 +126,8 @@ describe('StatsPanels', () => {
     render(
       <StatsPanels
         panels={panels}
-        rows={sampleRows}
+        allRows={sampleRows}
+        filteredRows={sampleRows}
         filterState={createEmptyFilterState()}
         onStatValueClick={handleClick}
       />,
@@ -141,7 +147,8 @@ describe('StatsPanels', () => {
     render(
       <StatsPanels
         panels={panels}
-        rows={sampleRows}
+        allRows={sampleRows}
+        filteredRows={sampleRows}
         filterState={filterState}
         onStatValueClick={noopClick}
       />,
@@ -160,7 +167,8 @@ describe('StatsPanels', () => {
     render(
       <StatsPanels
         panels={panels}
-        rows={sampleRows}
+        allRows={sampleRows}
+        filteredRows={sampleRows}
         filterState={createEmptyFilterState()}
         onStatValueClick={noopClick}
       />,
@@ -168,5 +176,28 @@ describe('StatsPanels', () => {
     const actifRow = screen.getByText('actif').closest('tr');
     expect(actifRow).toHaveAttribute('role', 'button');
     expect(actifRow).toHaveAttribute('tabindex', '0');
+  });
+
+  it('should display "-" for values not in filtered data', () => {
+    const filteredRows: DataRow[] = [
+      { nom: 'Dupont', statut: 'actif', date: '2022-05-10', tags: 'react|node' },
+    ];
+    const panels: StatsPanelConfig[] = [
+      { type: 'countByColumn', column: 'statut', label: 'Par statut' },
+    ];
+    render(
+      <StatsPanels
+        panels={panels}
+        allRows={sampleRows}
+        filteredRows={filteredRows}
+        filterState={createEmptyFilterState()}
+        onStatValueClick={noopClick}
+      />,
+    );
+    expect(screen.getByText('Par statut')).toBeInTheDocument();
+    expect(screen.getByText('actif')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText('inactif')).toBeInTheDocument();
+    expect(screen.getByText('-')).toBeInTheDocument();
   });
 });
