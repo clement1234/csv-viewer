@@ -18,18 +18,15 @@ jobs:
   test:
     name: Test & Coverage
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18, 20, 22]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
           cache: 'yarn'
 
       - name: Install dependencies
@@ -44,8 +41,7 @@ jobs:
       - name: Run tests with coverage
         run: yarn test:coverage
 
-      - name: Upload coverage artifacts (Node 20 only)
-        if: matrix.node-version == 20
+      - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
