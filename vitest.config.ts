@@ -10,8 +10,13 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html'],
+      reporter: ['text', 'html', 'json-summary'],
       exclude: ['node_modules/', 'src/test/'],
+    },
+    // Generate JSON report for badge automation
+    reporters: ['default', 'json'],
+    outputFile: {
+      json: './coverage/vitest-results.json',
     },
   },
 });
