@@ -70,46 +70,129 @@ describe('buildFilterPayloadFromStatClick', () => {
     });
   });
 
-  describe('countByYearFromDate → dateRange filter', () => {
-    it('should create a date range filter for the clicked year', () => {
+  describe('countByYearFromDate → category filter (year multi-select)', () => {
+    it('should create a category filter with isYearFilter for the clicked year', () => {
       const filterState = createEmptyFilterState();
       const result = buildFilterPayloadFromStatClick(
         { panelType: 'countByYearFromDate', columnName: 'date_inscription', clickedValue: '2023' },
         filterState,
       );
       expect(result).toEqual({
-        type: 'dateRange',
-        filter: { columnName: 'date_inscription', startDate: '2023-01-01', endDate: '2023-12-31' },
+        type: 'category',
+        filter: { columnName: 'date_inscription', selectedValues: ['2023'], isYearFilter: true },
       });
     });
 
-    it('should toggle off date range when clicking the same year', () => {
+    it('should toggle off when clicking the same year', () => {
       const filterState = createEmptyFilterState();
-      filterState.dateRangeFilters = [
-        { columnName: 'date_inscription', startDate: '2023-01-01', endDate: '2023-12-31' },
+      filterState.categoryFilters = [
+        { columnName: 'date_inscription', selectedValues: ['2023'], isYearFilter: true },
       ];
       const result = buildFilterPayloadFromStatClick(
         { panelType: 'countByYearFromDate', columnName: 'date_inscription', clickedValue: '2023' },
         filterState,
       );
       expect(result).toEqual({
-        type: 'dateRange',
-        filter: { columnName: 'date_inscription', startDate: null, endDate: null },
+        type: 'category',
+        filter: { columnName: 'date_inscription', selectedValues: [], isYearFilter: true },
       });
     });
 
-    it('should replace with new year when clicking a different year', () => {
+    it('should add new year when clicking a different year (multi-select)', () => {
       const filterState = createEmptyFilterState();
-      filterState.dateRangeFilters = [
-        { columnName: 'date_inscription', startDate: '2022-01-01', endDate: '2022-12-31' },
+      filterState.categoryFilters = [
+        { columnName: 'date_inscription', selectedValues: ['2022'], isYearFilter: true },
       ];
       const result = buildFilterPayloadFromStatClick(
         { panelType: 'countByYearFromDate', columnName: 'date_inscription', clickedValue: '2023' },
         filterState,
       );
       expect(result).toEqual({
-        type: 'dateRange',
-        filter: { columnName: 'date_inscription', startDate: '2023-01-01', endDate: '2023-12-31' },
+        type: 'category',
+        filter: { columnName: 'date_inscription', selectedValues: ['2022', '2023'], isYearFilter: true },
+      });
+    });
+
+    it('should handle invalid date values (with ⚠️ prefix)', () => {
+      const filterState = createEmptyFilterState();
+      const result = buildFilterPayloadFromStatClick(
+        { panelType: 'countByYearFromDate', columnName: 'date_inscription', clickedValue: '⚠️ 0' },
+        filterState,
+      );
+      expect(result).toEqual({
+        type: 'category',
+        filter: { columnName: 'date_inscription', selectedValues: ['0'], isYearFilter: true },
+      });
+    });
+
+    it('should toggle off invalid date when clicking the same value', () => {
+      const filterState = createEmptyFilterState();
+      filterState.categoryFilters = [
+        { columnName: 'date_inscription', selectedValues: ['0'], isYearFilter: true },
+      ];
+      const result = buildFilterPayloadFromStatClick(
+        { panelType: 'countByYearFromDate', columnName: 'date_inscription', clickedValue: '⚠️ 0' },
+        filterState,
+      );
+      expect(result).toEqual({
+        type: 'category',
+        filter: { columnName: 'date_inscription', selectedValues: [], isYearFilter: true },
+      });
+    });
+
+    it('should allow mixing valid years and invalid dates', () => {
+      const filterState = createEmptyFilterState();
+      filterState.categoryFilters = [
+        { columnName: 'date_inscription', selectedValues: ['2022', '2023'], isYearFilter: true },
+      ];
+      const result = buildFilterPayloadFromStatClick(
+        { panelType: 'countByYearFromDate', columnName: 'date_inscription', clickedValue: '⚠️ 0' },
+        filterState,
+      );
+      expect(result).toEqual({
+        type: 'category',
+        filter: { columnName: 'date_inscription', selectedValues: ['2022', '2023', '0'], isYearFilter: true },
+      });
+    });
+
+    it('should handle empty dates (⚠️ (vide)) by converting to empty string', () => {
+      const filterState = createEmptyFilterState();
+      const result = buildFilterPayloadFromStatClick(
+        { panelType: 'countByYearFromDate', columnName: 'date_inscription', clickedValue: '⚠️ (vide)' },
+        filterState,
+      );
+      expect(result).toEqual({
+        type: 'category',
+        filter: { columnName: 'date_inscription', selectedValues: [''], isYearFilter: true },
+      });
+    });
+
+    it('should toggle off empty dates when clicking twice', () => {
+      const filterState = createEmptyFilterState();
+      filterState.categoryFilters = [{ columnName: 'date_inscription', selectedValues: [''], isYearFilter: true }];
+
+      const result = buildFilterPayloadFromStatClick(
+        { panelType: 'countByYearFromDate', columnName: 'date_inscription', clickedValue: '⚠️ (vide)' },
+        filterState,
+      );
+      expect(result).toEqual({
+        type: 'category',
+        filter: { columnName: 'date_inscription', selectedValues: [], isYearFilter: true },
+      });
+    });
+
+    it('should remove year from mixed selection', () => {
+      const filterState = createEmptyFilterState();
+      filterState.categoryFilters = [
+        { columnName: 'date_inscription', selectedValues: ['2022', '2023', '0'], isYearFilter: true },
+      ];
+      const result = buildFilterPayloadFromStatClick(
+        { panelType: 'countByYearFromDate', columnName: 'date_inscription', clickedValue: '2023' },
+        filterState,
+      );
+      expect(result).toEqual({
+        type: 'category',
+        filter: { columnName: 'date_inscription', selectedValues: ['2022', '0'], isYearFilter: true },
       });
     });
   });
@@ -173,20 +256,52 @@ describe('isStatValueActiveInFilters', () => {
     expect(isStatValueActiveInFilters('countByColumn', 'statut', 'inactif', filterState)).toBe(false);
   });
 
-  it('should return true when date range matches the year', () => {
+  it('should return true when year is in category filter', () => {
     const filterState = createEmptyFilterState();
-    filterState.dateRangeFilters = [
-      { columnName: 'date', startDate: '2023-01-01', endDate: '2023-12-31' },
+    filterState.categoryFilters = [
+      { columnName: 'date', selectedValues: ['2023'], isYearFilter: true },
     ];
     expect(isStatValueActiveInFilters('countByYearFromDate', 'date', '2023', filterState)).toBe(true);
   });
 
-  it('should return false when date range does not match the year', () => {
+  it('should return false when year is not in category filter', () => {
     const filterState = createEmptyFilterState();
-    filterState.dateRangeFilters = [
-      { columnName: 'date', startDate: '2022-01-01', endDate: '2022-12-31' },
+    filterState.categoryFilters = [
+      { columnName: 'date', selectedValues: ['2022'], isYearFilter: true },
     ];
     expect(isStatValueActiveInFilters('countByYearFromDate', 'date', '2023', filterState)).toBe(false);
+  });
+
+  it('should return true when invalid date (with ⚠️) is in category filter', () => {
+    const filterState = createEmptyFilterState();
+    filterState.categoryFilters = [
+      { columnName: 'date', selectedValues: ['0', '2023'], isYearFilter: true },
+    ];
+    expect(isStatValueActiveInFilters('countByYearFromDate', 'date', '⚠️ 0', filterState)).toBe(true);
+  });
+
+  it('should return false when invalid date is not in category filter', () => {
+    const filterState = createEmptyFilterState();
+    filterState.categoryFilters = [
+      { columnName: 'date', selectedValues: ['2023'], isYearFilter: true },
+    ];
+    expect(isStatValueActiveInFilters('countByYearFromDate', 'date', '⚠️ 0', filterState)).toBe(false);
+  });
+
+  it('should return true when empty date (⚠️ (vide)) is in category filter', () => {
+    const filterState = createEmptyFilterState();
+    filterState.categoryFilters = [
+      { columnName: 'date', selectedValues: ['', '2023'], isYearFilter: true },
+    ];
+    expect(isStatValueActiveInFilters('countByYearFromDate', 'date', '⚠️ (vide)', filterState)).toBe(true);
+  });
+
+  it('should return false when empty date is not in category filter', () => {
+    const filterState = createEmptyFilterState();
+    filterState.categoryFilters = [
+      { columnName: 'date', selectedValues: ['2023'], isYearFilter: true },
+    ];
+    expect(isStatValueActiveInFilters('countByYearFromDate', 'date', '⚠️ (vide)', filterState)).toBe(false);
   });
 
   it('should return true when multiSelect value is in selectedValues', () => {

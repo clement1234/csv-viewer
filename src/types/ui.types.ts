@@ -6,17 +6,20 @@ export interface GlobalSearchFilter {
 export interface TextFilter {
   columnName: string;
   searchTerm: string;
+  exactMatch?: boolean;
 }
 
 export interface CategoryFilter {
   columnName: string;
   selectedValues: string[];
+  isYearFilter?: boolean;
 }
 
 export interface DateRangeFilter {
   columnName: string;
   startDate: string | null;
   endDate: string | null;
+  includeEmpty?: boolean;
 }
 
 export interface NumberRangeFilter {

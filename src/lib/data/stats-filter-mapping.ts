@@ -47,19 +47,29 @@ function buildDateRangeFilterPayload(
   clickedYear: string,
   filterState: FilterState,
 ): FilterUpdatePayload {
-  const existingFilter = filterState.dateRangeFilters.find((f) => f.columnName === columnName);
-  const expectedStartDate = `${clickedYear}-01-01`;
-  const expectedEndDate = `${clickedYear}-12-31`;
+  // Use category filter with isYearFilter flag for both valid years AND invalid dates
+  // This allows multi-selection of any combination (e.g., 2020 + 2021 + "0")
+  const existingFilter = filterState.categoryFilters.find(
+    (f) => f.columnName === columnName && f.isYearFilter,
+  );
+  const currentValues = existingFilter?.selectedValues ?? [];
 
-  // Toggle off si le même année est déjà sélectionnée
-  const isSameYearActive = existingFilter?.startDate === expectedStartDate
-    && existingFilter?.endDate === expectedEndDate;
-
-  if (isSameYearActive) {
-    return { type: 'dateRange', filter: { columnName, startDate: null, endDate: null } };
+  // Handle invalid date values (prefixed with ⚠️)
+  let valueToToggle = clickedYear;
+  if (clickedYear.startsWith('⚠️ ')) {
+    valueToToggle = clickedYear.slice(3); // Remove "⚠️ " prefix for storage
+    // Special case: "(vide)" represents empty string in the data
+    if (valueToToggle === '(vide)') {
+      valueToToggle = '';
+    }
   }
 
-  return { type: 'dateRange', filter: { columnName, startDate: expectedStartDate, endDate: expectedEndDate } };
+  const isAlreadySelected = currentValues.includes(valueToToggle);
+  const updatedValues = isAlreadySelected
+    ? currentValues.filter((v) => v !== valueToToggle)
+    : [...currentValues, valueToToggle];
+
+  return { type: 'category', filter: { columnName, selectedValues: updatedValues, isYearFilter: true } };
 }
 
 function buildMultiSelectFilterPayload(
@@ -93,8 +103,18 @@ export function isStatValueActiveInFilters(
       return categoryFilter?.selectedValues.includes(value) ?? false;
     }
     case 'countByYearFromDate': {
-      const dateFilter = filterState.dateRangeFilters.find((f) => f.columnName === columnName);
-      return dateFilter?.startDate === `${value}-01-01` && dateFilter?.endDate === `${value}-12-31`;
+      // Both valid years and invalid dates are stored in the same category filter
+      const yearFilter = filterState.categoryFilters.find(
+        (f) => f.columnName === columnName && f.isYearFilter,
+      );
+
+      // For invalid dates (prefixed with ⚠️), remove the prefix to check
+      let valueToCheck = value.startsWith('⚠️ ') ? value.slice(3) : value;
+      // Special case: "(vide)" represents empty string in the data
+      if (valueToCheck === '(vide)') {
+        valueToCheck = '';
+      }
+      return yearFilter?.selectedValues.includes(valueToCheck) ?? false;
     }
     case 'countBySplitValues': {
       const multiSelectFilter = filterState.multiSelectFilters.find((f) => f.columnName === columnName);
