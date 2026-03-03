@@ -80,9 +80,12 @@ jobs:
           gh pr list --state open --search "chore/badges-update" --json number --jq '.[].number' | \
             xargs -I {} gh pr close {} --comment "Closing in favor of newer badge update" || true
 
-          # Create new PR
+          # Create new PR and enable auto-merge
           gh pr create \
             --title "chore: update README badges" \
             --body "Automated badge update: ${TESTS} tests, ${COVERAGE}% coverage" \
             --base main \
             --head "$BRANCH"
+
+          # Enable auto-merge (will merge automatically once CI checks pass)
+          gh pr merge "$BRANCH" --squash --auto --delete-branch
