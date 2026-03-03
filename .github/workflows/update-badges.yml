@@ -1,0 +1,91 @@
+name: Update README Badges
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Run daily at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+# Prevent multiple badge update workflows from running simultaneously
+concurrency:
+  group: update-badges
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-badges:
+    name: Generate & Update Badges
+    runs-on: ubuntu-latest
+    # Skip if commit is from github-actions bot (prevents infinite loops)
+    if: github.actor != 'github-actions[bot]'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run tests with coverage and JSON output
+        run: yarn test:coverage
+        env:
+          CI: true
+
+      - name: Update README badges
+        id: update
+        run: |
+          node scripts/update-readme.mjs
+          # Check if README was modified
+          if git diff --quiet README.md; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.update.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Extract metrics for PR body
+          TESTS=$(node -e "const data = require('./coverage/vitest-results.json'); console.log(data.numTotalTests);")
+          COVERAGE=$(node -e "const data = require('./coverage/coverage-summary.json'); console.log(data.total.lines.pct.toFixed(2));")
+
+          # Create branch with date
+          BRANCH="chore/badges-update-$(date +%Y%m%d-%H%M%S)"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add README.md
+          git commit -m "chore: update README badges" -m "Automated update: $TESTS tests, $COVERAGE% coverage"
+
+          # Push branch
+          git push origin "$BRANCH"
+
+          # Close any existing badge update PRs (search by branch name pattern)
+          gh pr list --state open --search "chore/badges-update" --json number --jq '.[].number' | \
+            xargs -I {} gh pr close {} --comment "Closing in favor of newer badge update" || true
+
+          # Create new PR and enable auto-merge
+          gh pr create \
+            --title "chore: update README badges" \
+            --body "Automated badge update: ${TESTS} tests, ${COVERAGE}% coverage" \
+            --base main \
+            --head "$BRANCH"
+
+          # Enable auto-merge (will merge automatically once CI checks pass)
+          gh pr merge "$BRANCH" --squash --auto --delete-branch
