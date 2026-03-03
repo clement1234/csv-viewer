@@ -37,6 +37,10 @@ function countByYearFromDateColumn(rows: DataRow[], column: string): CountMap {
     if (dateObj) {
       const year = String(dateObj.getFullYear());
       counts.set(year, (counts.get(year) ?? 0) + 1);
+    } else {
+      // Include invalid dates with a warning prefix
+      const invalidKey = `⚠️ ${dateValue}`;
+      counts.set(invalidKey, (counts.get(invalidKey) ?? 0) + 1);
     }
   }
   return counts;
@@ -70,8 +74,39 @@ function computePanelData(panel: StatsPanelConfig, rows: DataRow[]): CountMap {
   }
 }
 
-function sortedEntries(countMap: Map<string, CountDisplay>): [string, CountDisplay][] {
-  return [...countMap.entries()].sort((entryA, entryB) => {
+function sortedEntries(
+  countMap: Map<string, CountDisplay>,
+  panelType: StatsPanelConfig['type'],
+): [string, CountDisplay][] {
+  const entries = [...countMap.entries()];
+
+  if (panelType === 'countByYearFromDate') {
+    // Sort years chronologically (newest first), invalid dates at the end
+    return entries.sort((entryA, entryB) => {
+      const aKey = entryA[0];
+      const bKey = entryB[0];
+
+      const aIsInvalid = aKey.startsWith('⚠️');
+      const bIsInvalid = bKey.startsWith('⚠️');
+
+      // Invalid dates go to the end
+      if (aIsInvalid && !bIsInvalid) return 1;
+      if (!aIsInvalid && bIsInvalid) return -1;
+
+      // Both invalid: sort by count
+      if (aIsInvalid && bIsInvalid) {
+        const aVal = entryA[1] === '-' ? 0 : entryA[1];
+        const bVal = entryB[1] === '-' ? 0 : entryB[1];
+        return bVal - aVal;
+      }
+
+      // Both are years: sort chronologically (newest first)
+      return Number(bKey) - Number(aKey);
+    });
+  }
+
+  // Default: sort by count (descending)
+  return entries.sort((entryA, entryB) => {
     const aVal = entryA[1] === '-' ? 0 : entryA[1];
     const bVal = entryB[1] === '-' ? 0 : entryB[1];
     return bVal - aVal;
@@ -88,7 +123,7 @@ interface PanelTableProps {
 }
 
 function PanelTable({ label, data, panelType, columnName, filterState, onValueClick }: PanelTableProps): React.JSX.Element {
-  const entries = useMemo(() => sortedEntries(data), [data]);
+  const entries = useMemo(() => sortedEntries(data, panelType), [data, panelType]);
 
   const handleRowKeyDown = useCallback((event: React.KeyboardEvent, value: string): void => {
     if (event.key === 'Enter' || event.key === ' ') {

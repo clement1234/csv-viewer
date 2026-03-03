@@ -47,6 +47,13 @@ function buildDateRangeFilterPayload(
   clickedYear: string,
   filterState: FilterState,
 ): FilterUpdatePayload {
+  // Handle invalid date values (prefixed with ⚠️)
+  if (clickedYear.startsWith('⚠️ ')) {
+    const actualValue = clickedYear.slice(3); // Remove "⚠️ " prefix
+    // Use text filter for invalid dates
+    return { type: 'text', filter: { columnName, searchTerm: actualValue } };
+  }
+
   const existingFilter = filterState.dateRangeFilters.find((f) => f.columnName === columnName);
   const expectedStartDate = `${clickedYear}-01-01`;
   const expectedEndDate = `${clickedYear}-12-31`;
