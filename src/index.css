@@ -6,4 +6,34 @@
   --color-badge-orange: #f59e0b;
   --color-badge-blue: #3b82f6;
   --color-badge-gray: #6b7280;
+  --color-badge-purple: #8b5cf6;
+  --color-badge-pink: #ec4899;
+  --color-badge-teal: #14b8a6;
+}
+
+/* Scrollbar subtile pour les tables et listes */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+  }
+
+  /* Focus visible pour accessibilité clavier */
+  :focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+}
+
+/* Table responsive : scroll horizontal sur mobile */
+@layer components {
+  .table-container {
+    @apply overflow-x-auto -mx-4 px-4;
+  }
+
+  @media (min-width: 640px) {
+    .table-container {
+      @apply mx-0 px-0;
+    }
+  }
 }
