@@ -42,7 +42,12 @@
       "Bash(npx --yes js-yaml:*)",
       "Bash(scripts/test-workflow-local.sh << 'EOF'\n#!/bin/bash\n\nset -e\n\necho \"🔍 Step 1: Validating YAML syntax...\"\nif npx --yes js-yaml .github/workflows/update-badges.yml > /dev/null 2>&1; then\n  echo \"✅ YAML is valid!\"\nelse\n  echo \"❌ YAML syntax error!\"\n  npx --yes js-yaml .github/workflows/update-badges.yml\n  exit 1\nfi\n\necho \"\"\necho \"🧪 Step 2: Running tests with coverage...\"\nyarn test:coverage\n\necho \"\"\necho \"📊 Step 3: Testing badge update script...\"\nnode scripts/update-readme.mjs\n\necho \"\"\necho \"📝 Step 4: Checking what changed...\"\nif git diff --quiet README.md; then\n  echo \"✅ No changes \\(badges already up to date\\)\"\nelse\n  echo \"✅ Badges would be updated:\"\n  git diff README.md | grep -E \"^\\\\+|^\\\\-\" | grep -v \"^\\\\+\\\\+\\\\+\\\\|^\\\\-\\\\-\\\\-\"\nfi\n\necho \"\"\necho \"🔄 Step 5: Reverting README changes...\"\ngit checkout README.md\n\necho \"\"\necho \"✅ All tests passed! Safe to push.\"\nEOF)",
       "Bash(./scripts/test-workflow-local.sh:*)",
-      "Bash(scripts/test-workflow-local.sh:*)"
+      "Bash(scripts/test-workflow-local.sh:*)",
+      "Bash(gh pr create:*)",
+      "Bash(/usr/local/bin/gh pr create --title \"chore: update README badges\" --body \"Automated badge update: 362 tests, 82.02% coverage\" --base main --head chore/badges-update-20260303-112809)",
+      "Bash(/opt/homebrew/bin/gh pr create --title \"chore: update README badges\" --body \"Automated badge update: 362 tests, 82.02% coverage\" --base main --head chore/badges-update-20260303-112809)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)"
     ]
   }
 }
