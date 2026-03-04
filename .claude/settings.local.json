@@ -19,7 +19,11 @@
       "Bash(git reset:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(yarn test:coverage:*)"
+      "Bash(yarn test:coverage:*)",
+      "Bash(.gitignore << 'EOF'\n# Dependencies\nnode_modules/\n\n# Build output\ndist/\ndist-ssr/\n\n# Coverage\ncoverage/\n*.lcov\n\n# Environment\n.env\n.env.local\n.env.*.local\n\n# Editor\n.vscode/*\n!.vscode/extensions.json\n!.vscode/settings.json\n.idea/\n*.swp\n*.swo\n*~\n\n# OS\n.DS_Store\nThumbs.db\n\n# Logs\nlogs/\n*.log\nnpm-debug.log*\nyarn-debug.log*\nyarn-error.log*\nEOF)",
+      "Bash(git rm:*)",
+      "Bash(git push:*)",
+      "Bash(yarn test:*)"
     ]
   }
 }
