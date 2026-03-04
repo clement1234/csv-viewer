@@ -64,7 +64,7 @@ describe('useConfigStorage', () => {
     result.current.saveConfig('Config 1', mockConfig);
     result.current.saveConfig('Config 2', {
       ...mockConfig,
-      appBranding: { title: 'Config 2' },
+      app: { title: 'Config 2' },
     });
 
     const allConfigs = result.current.loadAllConfigs();

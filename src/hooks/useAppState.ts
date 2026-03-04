@@ -1,8 +1,9 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { DataRow, InferredColumnSchema } from '../types/core.types.ts';
 import type { Config } from '../types/config.types.ts';
 import type { FilterState, SortState } from '../types/ui.types.ts';
 import type { Toast, ToastType } from './useToast.ts';
+import type { StoredConfig, ConfigMatchResult } from '../types/storage.types.ts';
 import { parseCSVFileToNormalizedRows } from '../lib/parsers/csv-parser.ts';
 import { parseXLSXFirstSheetWithAvailableSheets, extractRowsFromSpecificSheet } from '../lib/parsers/xlsx-parser.ts';
 import { inferSchemaFromDataRows, selectDefaultVisibleColumns } from '../lib/schema/schema-inference.ts';
@@ -15,6 +16,17 @@ import type { FilterUpdatePayload } from './useFilters.ts';
 import { usePagination } from './usePagination.ts';
 import { useToast } from './useToast.ts';
 import type { PaginationState } from '../types/ui.types.ts';
+import {
+  saveConfig,
+  loadConfig,
+  loadAllConfigs,
+  deleteConfig as deleteConfigFromStorage,
+  renameConfig as renameConfigInStorage,
+  getSelectedConfigName,
+  setSelectedConfig as setSelectedConfigInStorage,
+  isFirstUse,
+} from '../lib/storage/config-storage.ts';
+import { generateSchemaFingerprintFromData, findBestMatchingConfig } from '../lib/storage/config-matcher.ts';
 
 interface UsePaginationReturn {
   currentPage: number;
@@ -45,8 +57,12 @@ interface UseAppStateReturn {
   filterState: FilterState;
   activeFiltersCount: number;
   pagination: UsePaginationReturn;
+  savedConfigs: StoredConfig[];
+  selectedConfigName: string | null;
+  autoDetectedConfig: ConfigMatchResult | null;
+  isAutoDetectionEnabled: boolean;
   handleDataFileUpload: (file: File) => Promise<void>;
-  handleConfigFileUpload: (file: File) => Promise<void>;
+  handleConfigImport: (file: File, configName: string) => Promise<void>;
   handleSheetSelection: (sheetName: string) => Promise<void>;
   toggleColumnVisibility: (columnName: string) => void;
   selectRow: (index: number | null) => void;
@@ -56,6 +72,10 @@ interface UseAppStateReturn {
   resetFilters: () => void;
   removeToast: (id: string) => void;
   addToast: (type: ToastType, message: string, duration?: number) => void;
+  handleConfigSelection: (configName: string) => void;
+  handleDeleteConfig: (configName: string) => void;
+  handleRenameConfig: (oldName: string, newName: string) => void;
+  setIsAutoDetectionEnabled: (enabled: boolean) => void;
 }
 
 function isCSVFile(file: File): boolean {
@@ -74,8 +94,55 @@ export function useAppState(): UseAppStateReturn {
   const [sortState, setSortState] = useState<SortState>({ columnName: null, direction: null });
   const [uploadedDataFile, setUploadedDataFile] = useState<File | null>(null);
 
+  // Multi-config state with lazy initialization
+  const [savedConfigs, setSavedConfigs] = useState<StoredConfig[]>(() => loadAllConfigs());
+  const [selectedConfigName, setSelectedConfigName] = useState<string | null>(() => {
+    const selected = getSelectedConfigName();
+    return selected;
+  });
+  const [autoDetectedConfig, setAutoDetectedConfig] = useState<ConfigMatchResult | null>(null);
+  const [isAutoDetectionEnabled, setIsAutoDetectionEnabled] = useState(true);
+
   const { toasts, addToast, removeToast } = useToast();
-  const { filterState, updateFilter, resetFilters, activeFiltersCount } = useFilters();
+  const { filterState, updateFilter, resetFilters: resetFiltersInternal, activeFiltersCount } = useFilters();
+
+  // Initialize config from localStorage on mount (only for the config itself, not the list)
+  useEffect((): void => {
+    const selected = getSelectedConfigName();
+    if (selected) {
+      const stored = loadConfig(selected);
+      if (stored) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Initialization pattern for localStorage sync
+        setAppliedConfig(stored.config);
+      }
+    }
+  }, []);
+
+  // First-time user: load default VA-communauté config
+  useEffect((): void => {
+    if (isFirstUse()) {
+      fetch('/config-va-communaute.json')
+        .then((response) => response.json())
+        .then((vaConfig: unknown) => {
+          const validationResult = validateConfigAndReturnResult(vaConfig);
+
+          if (validationResult.isValid && validationResult.config) {
+            saveConfig('VA-communauté', validationResult.config);
+            setSelectedConfigInStorage('VA-communauté');
+            setSelectedConfigName('VA-communauté');
+            setAppliedConfig(validationResult.config);
+            setSavedConfigs(loadAllConfigs());
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to load default config:', error);
+        });
+    }
+  }, []);
+
+  const resetFilters = useCallback((): void => {
+    resetFiltersInternal();
+  }, [resetFiltersInternal]);
 
   const filteredData = useMemo(
     () => applyAllFiltersToDataRows(parsedData, filterState, inferredSchema),
@@ -136,15 +203,33 @@ export function useAppState(): UseAppStateReturn {
         setSelectedSheetName(result.availableSheetNames[0] ?? null);
       }
 
-      initializeFromParsedData(data, appliedConfig);
+      let configToApply = appliedConfig;
+
+      // Auto-detection si activée
+      if (isAutoDetectionEnabled && savedConfigs.length > 0) {
+        const schema = inferSchemaFromDataRows(data);
+        const matchResult = findBestMatchingConfig(schema, savedConfigs, 60);
+
+        if (matchResult && matchResult.config) {
+          configToApply = matchResult.config.config;
+          setAutoDetectedConfig(matchResult);
+          setSelectedConfigName(matchResult.config.name);
+          setSelectedConfigInStorage(matchResult.config.name);
+          addToast('info', `Config "${matchResult.config.name}" détectée (${matchResult.matchScore}%)`);
+        } else {
+          setAutoDetectedConfig(null);
+        }
+      }
+
+      initializeFromParsedData(data, configToApply);
       addToast('success', `${data.length} lignes chargées depuis ${file.name}`);
     } catch (parseError) {
       const errorMessage = parseError instanceof Error ? parseError.message : 'Erreur inconnue';
       addToast('error', `Erreur lors du chargement : ${errorMessage}`);
     }
-  }, [appliedConfig, initializeFromParsedData, addToast]);
+  }, [appliedConfig, isAutoDetectionEnabled, savedConfigs, initializeFromParsedData, addToast]);
 
-  const handleConfigFileUpload = useCallback(async (file: File): Promise<void> => {
+  const handleConfigImport = useCallback(async (file: File, configName: string): Promise<void> => {
     try {
       const configText = await file.text();
       const rawConfig: unknown = JSON.parse(configText);
@@ -156,12 +241,25 @@ export function useAppState(): UseAppStateReturn {
         return;
       }
 
+      // Generate fingerprint if data is loaded
+      let fingerprint;
+      if (parsedData.length > 0) {
+        const schema = inferSchemaFromDataRows(parsedData);
+        fingerprint = generateSchemaFingerprintFromData(schema);
+      }
+
+      saveConfig(configName, validationResult.config, fingerprint);
+      setSavedConfigs(loadAllConfigs());
+      setSelectedConfigName(configName);
+      setSelectedConfigInStorage(configName);
+
       if (parsedData.length > 0) {
         initializeFromParsedData(parsedData, validationResult.config);
       } else {
         setAppliedConfig(validationResult.config);
       }
-      addToast('success', 'Configuration chargée');
+
+      addToast('success', `Configuration "${configName}" sauvegardée`);
     } catch (parseError) {
       const errorMessage = parseError instanceof Error ? parseError.message : 'Erreur inconnue';
       addToast('error', `Erreur de configuration : ${errorMessage}`);
@@ -216,6 +314,50 @@ export function useAppState(): UseAppStateReturn {
     });
   }, []);
 
+  const handleConfigSelection = useCallback((configName: string): void => {
+    const stored = loadConfig(configName);
+    if (!stored) return;
+
+    setSelectedConfigName(configName);
+    setSelectedConfigInStorage(configName);
+
+    if (parsedData.length > 0) {
+      initializeFromParsedData(parsedData, stored.config);
+    } else {
+      setAppliedConfig(stored.config);
+    }
+
+    addToast('info', `Configuration "${configName}" sélectionnée`);
+  }, [parsedData, initializeFromParsedData, addToast]);
+
+  const handleDeleteConfig = useCallback((configName: string): void => {
+    deleteConfigFromStorage(configName);
+    setSavedConfigs(loadAllConfigs());
+
+    if (selectedConfigName === configName) {
+      setSelectedConfigName(null);
+      setAppliedConfig(null);
+    }
+
+    addToast('info', `Configuration "${configName}" supprimée`);
+  }, [selectedConfigName, addToast]);
+
+  const handleRenameConfig = useCallback((oldName: string, newName: string): void => {
+    try {
+      renameConfigInStorage(oldName, newName);
+      setSavedConfigs(loadAllConfigs());
+
+      if (selectedConfigName === oldName) {
+        setSelectedConfigName(newName);
+      }
+
+      addToast('success', `Configuration renommée en "${newName}"`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      addToast('error', errorMessage);
+    }
+  }, [selectedConfigName, addToast]);
+
   return {
     // État
     parsedData,
@@ -234,9 +376,13 @@ export function useAppState(): UseAppStateReturn {
     filterState,
     activeFiltersCount,
     pagination,
+    savedConfigs,
+    selectedConfigName,
+    autoDetectedConfig,
+    isAutoDetectionEnabled,
     // Actions
     handleDataFileUpload,
-    handleConfigFileUpload,
+    handleConfigImport,
     handleSheetSelection,
     toggleColumnVisibility,
     selectRow,
@@ -246,5 +392,9 @@ export function useAppState(): UseAppStateReturn {
     resetFilters,
     removeToast,
     addToast,
+    handleConfigSelection,
+    handleDeleteConfig,
+    handleRenameConfig,
+    setIsAutoDetectionEnabled,
   };
 }

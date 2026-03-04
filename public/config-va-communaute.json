@@ -1,0 +1,103 @@
+{
+  "app": {
+    "title": "VA-Communauté",
+    "subtitle": "Gestion de la communauté Vivre et Aimer"
+  },
+  "columns": {
+    "defaultVisible": ["nom", "prenom", "email", "ville", "statut", "annee_adhesion"],
+    "labels": {
+      "nom": "Nom",
+      "prenom": "Prénom",
+      "email": "Email",
+      "telephone": "Téléphone",
+      "ville": "Ville",
+      "code_postal": "Code Postal",
+      "date_naissance": "Date de naissance",
+      "date_adhesion": "Date d'adhésion",
+      "annee_adhesion": "Année d'adhésion",
+      "statut": "Statut",
+      "type_adhesion": "Type d'adhésion",
+      "montant": "Montant (€)",
+      "newsletter": "Newsletter",
+      "commentaire": "Commentaire"
+    },
+    "formats": {
+      "date_naissance": {
+        "type": "date",
+        "inputFormat": "YYYY-MM-DD",
+        "outputFormat": "DD/MM/YYYY"
+      },
+      "date_adhesion": {
+        "type": "date",
+        "inputFormat": "YYYY-MM-DD",
+        "outputFormat": "DD/MM/YYYY"
+      },
+      "statut": {
+        "type": "badge",
+        "map": {
+          "actif": { "color": "#10b981", "variant": "solid" },
+          "inactif": { "color": "#ef4444", "variant": "solid" },
+          "en_attente": { "color": "#f59e0b", "variant": "outline" }
+        }
+      },
+      "type_adhesion": {
+        "type": "badge",
+        "map": {
+          "individuel": { "color": "#3b82f6", "variant": "outline" },
+          "couple": { "color": "#8b5cf6", "variant": "outline" },
+          "famille": { "color": "#ec4899", "variant": "outline" }
+        }
+      },
+      "email": {
+        "type": "link",
+        "linkType": "mailto"
+      },
+      "telephone": {
+        "type": "link",
+        "linkType": "tel"
+      }
+    }
+  },
+  "filters": {
+    "globalSearchColumns": ["nom", "prenom", "email", "ville", "telephone"],
+    "text": ["nom", "prenom", "ville"],
+    "dropdown": ["statut", "type_adhesion", "annee_adhesion"],
+    "dateRange": ["date_adhesion", "date_naissance"],
+    "numberRange": ["montant"],
+    "boolean": ["newsletter"]
+  },
+  "stats": {
+    "cards": [
+      { "type": "count", "label": "Total adhérents" },
+      { "type": "countWhere", "label": "Adhérents actifs", "column": "statut", "value": "actif" },
+      { "type": "countWhere", "label": "Abonnés newsletter", "column": "newsletter", "value": "oui" }
+    ],
+    "panels": [
+      { "type": "countByColumn", "column": "statut", "label": "Répartition par statut" },
+      { "type": "countByColumn", "column": "type_adhesion", "label": "Types d'adhésion" },
+      { "type": "countByColumn", "column": "annee_adhesion", "label": "Adhésions par année" },
+      { "type": "countByColumn", "column": "ville", "label": "Répartition géographique" }
+    ]
+  },
+  "detailModal": {
+    "titleTemplate": "{{prenom}} {{nom}}",
+    "sections": [
+      {
+        "title": "Informations personnelles",
+        "fields": ["nom", "prenom", "email", "telephone", "date_naissance"]
+      },
+      {
+        "title": "Adresse",
+        "fields": ["ville", "code_postal"]
+      },
+      {
+        "title": "Adhésion",
+        "fields": ["type_adhesion", "date_adhesion", "annee_adhesion", "statut", "montant", "newsletter"]
+      },
+      {
+        "title": "Remarques",
+        "fields": ["commentaire"]
+      }
+    ]
+  }
+}

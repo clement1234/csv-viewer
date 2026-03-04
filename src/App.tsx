@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useAppState } from './hooks/useAppState.ts';
 import { Dropzone } from './components/upload/Dropzone.tsx';
 import { FilePicker } from './components/upload/FilePicker.tsx';
@@ -6,19 +6,22 @@ import { DataTable } from './components/table/DataTable.tsx';
 import { Pagination } from './components/table/Pagination.tsx';
 import { ColumnPicker } from './components/ui/ColumnPicker.tsx';
 import { DetailModal } from './components/ui/DetailModal.tsx';
+import { Modal } from './components/ui/Modal.tsx';
 import { Toast } from './components/ui/Toast.tsx';
 import { Button } from './components/ui/Button.tsx';
 import { FiltersPanel } from './components/filters/FiltersPanel.tsx';
 import { StatsCards } from './components/stats/StatsCards.tsx';
 import { StatsPanels } from './components/stats/StatsPanels.tsx';
 import { DownloadIcon } from './components/ui/Icons.tsx';
+import { ConfigSelector } from './components/config/ConfigSelector.tsx';
+import { ConfigManagementPanel } from './components/config/ConfigManagementPanel.tsx';
+import { AutoDetectionIndicator } from './components/config/AutoDetectionIndicator.tsx';
 import { exportDataRowsToCSVFile } from './lib/data/export.ts';
 import { buildFilterPayloadFromStatClick } from './lib/data/stats-filter-mapping.ts';
 import type { DataRow } from './types/core.types.ts';
 import type { StatsPanelConfig } from './types/config.types.ts';
 
 const ACCEPTED_DATA_FILE_TYPES = ['.csv', '.xlsx', '.xls'];
-const ACCEPTED_CONFIG_FILE_TYPES = ['.json'];
 
 function App(): React.JSX.Element {
   const {
@@ -26,10 +29,18 @@ function App(): React.JSX.Element {
     appliedConfig, visibleColumns, selectedRowIndex, sortState,
     filteredData, sortedData, paginatedData, toasts, filterState,
     activeFiltersCount, pagination,
-    handleDataFileUpload, handleConfigFileUpload, handleSheetSelection,
+    savedConfigs, selectedConfigName, autoDetectedConfig, isAutoDetectionEnabled,
+    handleDataFileUpload, handleConfigImport, handleSheetSelection,
     toggleColumnVisibility, selectRow, navigateRow, handleSortChange,
     updateFilter, resetFilters, removeToast, addToast,
+    handleConfigSelection, handleDeleteConfig, handleRenameConfig,
+    setIsAutoDetectionEnabled,
   } = useAppState();
+
+  const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
+  const [showConfigNamePrompt, setShowConfigNamePrompt] = useState(false);
+  const [pendingConfigFile, setPendingConfigFile] = useState<File | null>(null);
+  const [configNameInput, setConfigNameInput] = useState('');
 
   const handleRowClick = useCallback((_row: DataRow, index: number): void => {
     selectRow(index);
@@ -65,6 +76,21 @@ function App(): React.JSX.Element {
     updateFilter(payload);
   }, [filterState, updateFilter]);
 
+  const handleConfigImportWithPrompt = useCallback((file: File): void => {
+    setPendingConfigFile(file);
+    setConfigNameInput('');
+    setShowConfigNamePrompt(true);
+  }, []);
+
+  const handleConfigNameSubmit = useCallback((): void => {
+    if (pendingConfigFile && configNameInput.trim()) {
+      handleConfigImport(pendingConfigFile, configNameInput.trim());
+      setShowConfigNamePrompt(false);
+      setPendingConfigFile(null);
+      setConfigNameInput('');
+    }
+  }, [pendingConfigFile, configNameInput, handleConfigImport]);
+
   const isDataLoaded = parsedData.length > 0;
   const appTitle = appliedConfig?.app?.title ?? 'CSV/Excel Viewer';
   const appSubtitle = appliedConfig?.app?.subtitle;
@@ -93,12 +119,12 @@ function App(): React.JSX.Element {
               label="Glissez-déposez un fichier CSV ou Excel"
             />
 
-            <div className="flex items-center justify-between">
-              <FilePicker
-                onFileSelected={handleConfigFileUpload}
-                acceptedFileTypes={ACCEPTED_CONFIG_FILE_TYPES}
-                label="Config (optionnel)"
-                buttonVariant="ghost"
+            <div className="flex items-center justify-center">
+              <ConfigSelector
+                configs={savedConfigs}
+                selectedConfigName={selectedConfigName}
+                onSelect={handleConfigSelection}
+                onOpenManagement={() => setIsConfigPanelOpen(true)}
               />
             </div>
           </div>
@@ -118,12 +144,19 @@ function App(): React.JSX.Element {
                   Réinitialiser les filtres ({activeFiltersCount})
                 </Button>
               )}
-              <FilePicker
-                onFileSelected={handleConfigFileUpload}
-                acceptedFileTypes={ACCEPTED_CONFIG_FILE_TYPES}
-                label="Config"
-                buttonVariant="ghost"
+              <ConfigSelector
+                configs={savedConfigs}
+                selectedConfigName={selectedConfigName}
+                onSelect={handleConfigSelection}
+                onOpenManagement={() => setIsConfigPanelOpen(true)}
               />
+              {autoDetectedConfig && (
+                <AutoDetectionIndicator
+                  matchResult={autoDetectedConfig}
+                  isEnabled={isAutoDetectionEnabled}
+                  onToggle={setIsAutoDetectionEnabled}
+                />
+              )}
               <FilePicker
                 onFileSelected={handleDataFileUpload}
                 acceptedFileTypes={ACCEPTED_DATA_FILE_TYPES}
@@ -245,6 +278,76 @@ function App(): React.JSX.Element {
             onNavigate={navigateRow}
           />
         </div>
+      )}
+
+      {/* Config Management Panel */}
+      <ConfigManagementPanel
+        isOpen={isConfigPanelOpen}
+        onClose={() => setIsConfigPanelOpen(false)}
+        configs={savedConfigs}
+        selectedConfigName={selectedConfigName}
+        onImport={handleConfigImportWithPrompt}
+        onDelete={handleDeleteConfig}
+        onRename={handleRenameConfig}
+        onSelect={handleConfigSelection}
+      />
+
+      {/* Config Name Prompt */}
+      {showConfigNamePrompt && pendingConfigFile && (
+        <Modal
+          isOpen={true}
+          onClose={() => {
+            setShowConfigNamePrompt(false);
+            setPendingConfigFile(null);
+            setConfigNameInput('');
+          }}
+          title="Nom de la configuration"
+        >
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="config-name-input"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Entrez un nom pour cette configuration
+              </label>
+              <input
+                id="config-name-input"
+                type="text"
+                value={configNameInput}
+                onChange={(e) => setConfigNameInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && configNameInput.trim()) {
+                    handleConfigNameSubmit();
+                  }
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: Configuration Adhérents 2025"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowConfigNamePrompt(false);
+                  setPendingConfigFile(null);
+                  setConfigNameInput('');
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleConfigNameSubmit}
+                disabled={!configNameInput.trim()}
+              >
+                Importer
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
