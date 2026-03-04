@@ -4,8 +4,8 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript)
 ![Vite](https://img.shields.io/badge/Vite-7.x-646cff?logo=vite)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-38bdf8?logo=tailwindcss)
-![Tests](https://img.shields.io/badge/Tests-364%20passing-success)
-![Coverage](https://img.shields.io/badge/Coverage-82%25+-green)
+![Tests](https://img.shields.io/badge/Tests-379%20passing-success)
+![Coverage](https://img.shields.io/badge/Coverage-83%25+-green)
 
 > Application web moderne pour visualiser, filtrer et analyser des fichiers CSV et Excel directement dans le navigateur.
 
