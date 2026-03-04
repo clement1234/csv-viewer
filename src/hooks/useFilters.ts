@@ -81,7 +81,7 @@ export function useFilters(initialState?: Partial<FilterState>): UseFiltersRetur
         }
         case 'category': {
           const existingIndex = previous.categoryFilters.findIndex(
-            (f) => f.columnName === payload.filter.columnName,
+            (f) => f.columnName === payload.filter.columnName && f.isYearFilter === payload.filter.isYearFilter,
           );
           const updatedCategoryFilters = [...previous.categoryFilters];
           if (existingIndex >= 0) {
@@ -89,6 +89,7 @@ export function useFilters(initialState?: Partial<FilterState>): UseFiltersRetur
           } else {
             updatedCategoryFilters.push(payload.filter);
           }
+
           return { ...previous, categoryFilters: updatedCategoryFilters };
         }
         case 'dateRange': {

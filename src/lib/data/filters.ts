@@ -46,7 +46,27 @@ function applyCategoryFilters(data: DataRow[], filters: FilterState['categoryFil
   for (const filter of filters) {
     if (filter.selectedValues.length === 0) continue;
     const selectedSet = new Set(filter.selectedValues);
-    result = result.filter((row) => selectedSet.has(row[filter.columnName] ?? ''));
+
+    if (filter.isYearFilter) {
+      // Year filter: extract year from valid dates OR match invalid dates exactly
+      result = result.filter((row) => {
+        const dateValue = row[filter.columnName] ?? '';
+        if (!dateValue) return false;
+
+        const dateObj = parseDateStringToDateObject(dateValue);
+        if (dateObj) {
+          // Valid date: extract year and check if it's selected
+          const year = String(dateObj.getFullYear());
+          return selectedSet.has(year);
+        } else {
+          // Invalid date: check if the exact value is selected
+          return selectedSet.has(dateValue);
+        }
+      });
+    } else {
+      // Regular category filter: compare cell value directly
+      result = result.filter((row) => selectedSet.has(row[filter.columnName] ?? ''));
+    }
   }
   return result;
 }

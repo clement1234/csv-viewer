@@ -221,4 +221,73 @@ describe('applyAllFiltersToDataRows', () => {
     const result = applyAllFiltersToDataRows(createTestData(), filters, createTestSchema());
     expect(result).toHaveLength(2);
   });
+
+  // Year filters (category filter with isYearFilter flag)
+  it('should filter by year when isYearFilter is true', () => {
+    const filters: FilterState = {
+      ...emptyFilterState(),
+      categoryFilters: [{ columnName: 'date_inscription', selectedValues: ['2024'], isYearFilter: true }],
+    };
+    const result = applyAllFiltersToDataRows(createTestData(), filters, createTestSchema());
+    expect(result).toHaveLength(3); // 3 rows from 2024
+    expect(result.every((row) => row.date_inscription.startsWith('2024'))).toBe(true);
+  });
+
+  it('should filter by multiple years when isYearFilter is true', () => {
+    const filters: FilterState = {
+      ...emptyFilterState(),
+      categoryFilters: [{ columnName: 'date_inscription', selectedValues: ['2023', '2024'], isYearFilter: true }],
+    };
+    const result = applyAllFiltersToDataRows(createTestData(), filters, createTestSchema());
+    expect(result).toHaveLength(5); // All rows are from 2023 or 2024
+  });
+
+  it('should filter by invalid date values when isYearFilter is true', () => {
+    const dataWithInvalidDates: DataRow[] = [
+      { nom: 'Dupont', date_inscription: '2024-01-15' },
+      { nom: 'Martin', date_inscription: '0' },
+      { nom: 'Durand', date_inscription: 'invalid' },
+      { nom: 'Bernard', date_inscription: '2023-06-10' },
+    ];
+    const filters: FilterState = {
+      ...emptyFilterState(),
+      categoryFilters: [{ columnName: 'date_inscription', selectedValues: ['0', 'invalid'], isYearFilter: true }],
+    };
+    const result = applyAllFiltersToDataRows(dataWithInvalidDates, filters, createTestSchema());
+    expect(result).toHaveLength(2);
+    expect(result[0].nom).toBe('Martin');
+    expect(result[1].nom).toBe('Durand');
+  });
+
+  it('should filter by mix of valid years and invalid dates when isYearFilter is true', () => {
+    const dataWithInvalidDates: DataRow[] = [
+      { nom: 'Dupont', date_inscription: '2024-01-15' },
+      { nom: 'Martin', date_inscription: '0' },
+      { nom: 'Durand', date_inscription: '2023-06-10' },
+      { nom: 'Bernard', date_inscription: 'invalid' },
+      { nom: 'Petit', date_inscription: '2022-01-01' },
+    ];
+    const filters: FilterState = {
+      ...emptyFilterState(),
+      categoryFilters: [{ columnName: 'date_inscription', selectedValues: ['2024', '0'], isYearFilter: true }],
+    };
+    const result = applyAllFiltersToDataRows(dataWithInvalidDates, filters, createTestSchema());
+    expect(result).toHaveLength(2); // Dupont (2024) and Martin (0)
+    expect(result.map((r) => r.nom)).toEqual(['Dupont', 'Martin']);
+  });
+
+  it('should exclude empty date values when using year filter', () => {
+    const dataWithEmptyDates: DataRow[] = [
+      { nom: 'Dupont', date_inscription: '2024-01-15' },
+      { nom: 'Martin', date_inscription: '' },
+      { nom: 'Durand', date_inscription: '2024-06-10' },
+    ];
+    const filters: FilterState = {
+      ...emptyFilterState(),
+      categoryFilters: [{ columnName: 'date_inscription', selectedValues: ['2024'], isYearFilter: true }],
+    };
+    const result = applyAllFiltersToDataRows(dataWithEmptyDates, filters, createTestSchema());
+    expect(result).toHaveLength(2);
+    expect(result.every((row) => row.nom !== 'Martin')).toBe(true);
+  });
 });

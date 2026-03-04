@@ -12,6 +12,7 @@ export interface TextFilter {
 export interface CategoryFilter {
   columnName: string;
   selectedValues: string[];
+  isYearFilter?: boolean;
 }
 
 export interface DateRangeFilter {
