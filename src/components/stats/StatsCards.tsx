@@ -42,7 +42,7 @@ export function StatsCards({ cards, rows, filterState, onCardClick }: StatsCards
 
         return (
           <div
-            key={`${card.type}-${card.column}-${card.value}-${cardIndex}`}
+            key={`${card.type}-${card.label}-${cardIndex}`}
             role={isClickable ? 'button' : undefined}
             tabIndex={isClickable ? 0 : undefined}
             onClick={isClickable ? (): void => onCardClick(card.column, card.value) : undefined}
