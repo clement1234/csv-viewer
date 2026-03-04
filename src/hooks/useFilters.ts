@@ -49,16 +49,35 @@ export function useFilters(initialState?: Partial<FilterState>): UseFiltersRetur
         case 'globalSearch':
           return { ...previous, globalSearch: payload.filter };
         case 'text': {
-          const existingIndex = previous.textFilters.findIndex(
+          const updatedTextFilters = [...previous.textFilters];
+
+          // Si searchTerm est vide, supprimer le filtre au lieu de le garder
+          if (!payload.filter.searchTerm) {
+            const filtered = updatedTextFilters.filter(
+              (f) => f.columnName !== payload.filter.columnName,
+            );
+            return { ...previous, textFilters: filtered };
+          }
+
+          const existingIndex = updatedTextFilters.findIndex(
             (f) => f.columnName === payload.filter.columnName,
           );
-          const updatedTextFilters = [...previous.textFilters];
           if (existingIndex >= 0) {
             updatedTextFilters[existingIndex] = payload.filter;
           } else {
             updatedTextFilters.push(payload.filter);
           }
-          return { ...previous, textFilters: updatedTextFilters };
+
+          // Clear date range filter on the same column to avoid conflicts
+          const updatedDateRangeFilters = previous.dateRangeFilters.filter(
+            (f) => f.columnName !== payload.filter.columnName,
+          );
+
+          return {
+            ...previous,
+            textFilters: updatedTextFilters,
+            dateRangeFilters: updatedDateRangeFilters,
+          };
         }
         case 'category': {
           const existingIndex = previous.categoryFilters.findIndex(
@@ -73,16 +92,35 @@ export function useFilters(initialState?: Partial<FilterState>): UseFiltersRetur
           return { ...previous, categoryFilters: updatedCategoryFilters };
         }
         case 'dateRange': {
-          const existingIndex = previous.dateRangeFilters.findIndex(
+          const updatedDateRangeFilters = [...previous.dateRangeFilters];
+
+          // Si startDate et endDate sont null, supprimer le filtre au lieu de le garder
+          if (payload.filter.startDate === null && payload.filter.endDate === null) {
+            const filtered = updatedDateRangeFilters.filter(
+              (f) => f.columnName !== payload.filter.columnName,
+            );
+            return { ...previous, dateRangeFilters: filtered };
+          }
+
+          const existingIndex = updatedDateRangeFilters.findIndex(
             (f) => f.columnName === payload.filter.columnName,
           );
-          const updatedDateRangeFilters = [...previous.dateRangeFilters];
           if (existingIndex >= 0) {
             updatedDateRangeFilters[existingIndex] = payload.filter;
           } else {
             updatedDateRangeFilters.push(payload.filter);
           }
-          return { ...previous, dateRangeFilters: updatedDateRangeFilters };
+
+          // Clear text filter on the same column to avoid conflicts
+          const updatedTextFilters = previous.textFilters.filter(
+            (f) => f.columnName !== payload.filter.columnName,
+          );
+
+          return {
+            ...previous,
+            dateRangeFilters: updatedDateRangeFilters,
+            textFilters: updatedTextFilters,
+          };
         }
         case 'numberRange': {
           const existingIndex = previous.numberRangeFilters.findIndex(

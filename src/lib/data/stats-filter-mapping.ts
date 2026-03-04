@@ -50,8 +50,16 @@ function buildDateRangeFilterPayload(
   // Handle invalid date values (prefixed with ⚠️)
   if (clickedYear.startsWith('⚠️ ')) {
     const actualValue = clickedYear.slice(3); // Remove "⚠️ " prefix
-    // Use text filter for invalid dates
-    return { type: 'text', filter: { columnName, searchTerm: actualValue } };
+    const existingTextFilter = filterState.textFilters.find((f) => f.columnName === columnName);
+    const isAlreadyActive = existingTextFilter?.searchTerm === actualValue && existingTextFilter?.exactMatch;
+
+    if (isAlreadyActive) {
+      // Toggle off: clear the text filter
+      return { type: 'text', filter: { columnName, searchTerm: '' } };
+    }
+
+    // Use text filter with exact match for invalid dates
+    return { type: 'text', filter: { columnName, searchTerm: actualValue, exactMatch: true } };
   }
 
   const existingFilter = filterState.dateRangeFilters.find((f) => f.columnName === columnName);
@@ -100,6 +108,13 @@ export function isStatValueActiveInFilters(
       return categoryFilter?.selectedValues.includes(value) ?? false;
     }
     case 'countByYearFromDate': {
+      // Check for invalid dates (prefixed with ⚠️) in text filters
+      if (value.startsWith('⚠️ ')) {
+        const actualValue = value.slice(3);
+        const textFilter = filterState.textFilters.find((f) => f.columnName === columnName);
+        return textFilter?.searchTerm === actualValue && textFilter?.exactMatch === true;
+      }
+      // Check for valid years in date range filters
       const dateFilter = filterState.dateRangeFilters.find((f) => f.columnName === columnName);
       return dateFilter?.startDate === `${value}-01-01` && dateFilter?.endDate === `${value}-12-31`;
     }

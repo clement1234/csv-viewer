@@ -6,6 +6,7 @@ export interface GlobalSearchFilter {
 export interface TextFilter {
   columnName: string;
   searchTerm: string;
+  exactMatch?: boolean;
 }
 
 export interface CategoryFilter {

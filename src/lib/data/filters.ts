@@ -25,9 +25,18 @@ function applyTextFilters(data: DataRow[], filters: FilterState['textFilters']):
   for (const filter of filters) {
     if (!filter.searchTerm) continue;
     const lowerSearch = filter.searchTerm.toLowerCase();
-    result = result.filter((row) =>
-      (row[filter.columnName] ?? '').toLowerCase().includes(lowerSearch),
-    );
+
+    if (filter.exactMatch) {
+      // Exact match: compare the entire cell value
+      result = result.filter((row) =>
+        (row[filter.columnName] ?? '').toLowerCase() === lowerSearch,
+      );
+    } else {
+      // Substring match: default behavior
+      result = result.filter((row) =>
+        (row[filter.columnName] ?? '').toLowerCase().includes(lowerSearch),
+      );
+    }
   }
   return result;
 }

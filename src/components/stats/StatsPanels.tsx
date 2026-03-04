@@ -139,11 +139,11 @@ function PanelTable({ label, data, panelType, columnName, filterState, onValueCl
       </h3>
       <table className="w-full text-sm">
         <tbody>
-          {entries.map(([value, count]) => {
+          {entries.map(([value, count], index) => {
             const isActive = isStatValueActiveInFilters(panelType, columnName, value, filterState);
             return (
               <tr
-                key={value}
+                key={`${columnName}-${value}-${index}`}
                 role="button"
                 tabIndex={0}
                 onClick={() => onValueClick(value)}
@@ -188,7 +188,7 @@ export function StatsPanels({ panels, allRows, filteredRows, filterState, onStat
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {panels.map((panel, panelIndex) => (
         <PanelTable
-          key={panel.label}
+          key={`${panel.type}-${panel.column}-${panelIndex}`}
           label={panel.label}
           data={panelDataList[panelIndex]}
           panelType={panel.type}
