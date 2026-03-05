@@ -136,4 +136,21 @@ describe('extractRowsFromSpecificSheet', () => {
     });
     await expect(extractRowsFromSpecificSheet(file, 'Empty')).rejects.toThrow();
   });
+
+  it('should handle large files with many rows', async () => {
+    // Test de régression : vérifier que la détection manuelle des lignes fonctionne
+    // en créant un fichier avec beaucoup de lignes
+    const data: (string | number)[][] = [['ID', 'Nom', 'Email']];
+    for (let i = 1; i <= 100; i++) {
+      data.push([i, `User${i}`, `user${i}@test.com`]);
+    }
+
+    const file = createXLSXFile([{ name: 'Data', data }]);
+    const result = await parseXLSXFirstSheetWithAvailableSheets(file);
+
+    // Vérifier que toutes les lignes sont bien détectées
+    expect(result.data).toHaveLength(100);
+    expect(result.data[0]['nom']).toBe('User1');
+    expect(result.data[99]['nom']).toBe('User100');
+  });
 });

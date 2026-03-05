@@ -30,6 +30,27 @@ function extractAndNormalizeSheetData(
     throw new Error(`La feuille "${sheetName}" n'existe pas dans le fichier.`);
   }
 
+  // Détecter manuellement la dernière ligne en scannant les cellules
+  // Cela permet de gérer les fichiers xlsx où !ref n'est pas correctement défini
+  const cellKeys = Object.keys(worksheet).filter((key) => !key.startsWith('!'));
+
+  // Extraire les numéros de ligne des clés de cellules (ex: A1 -> 1, B23 -> 23)
+  const rowNumbers = cellKeys
+    .map((key) => {
+      const match = key.match(/\d+$/);
+      return match ? parseInt(match[0], 10) : 0;
+    })
+    .filter((num) => num > 0);
+
+  const maxRow = rowNumbers.length > 0 ? Math.max(...rowNumbers) : 1;
+
+  // Si on détecte des lignes au-delà de la ligne 1, forcer la plage
+  if (maxRow > 1) {
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    range.e.r = maxRow - 1; // -1 car 0-indexed
+    worksheet['!ref'] = XLSX.utils.encode_range(range);
+  }
+
   // Parser en mode array pour contrôler les headers nous-mêmes
   const allRows: unknown[][] = XLSX.utils.sheet_to_json(worksheet, {
     header: 1,
@@ -64,7 +85,14 @@ export async function parseXLSXFirstSheetWithAvailableSheets(
   file: File,
 ): Promise<ParseXLSXResult> {
   const arrayBuffer = await readFileAsArrayBuffer(file);
-  const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+  const workbook = XLSX.read(arrayBuffer, {
+    type: 'array',
+    cellDates: true,
+    sheetRows: 0, // 0 = lire toutes les lignes sans limite
+    bookVBA: true, // Support des macros/VBA
+    cellFormula: true, // Support des formules
+    cellStyles: true, // Support des styles
+  });
 
   const availableSheetNames = workbook.SheetNames;
   if (availableSheetNames.length === 0) {
@@ -82,7 +110,14 @@ export async function extractRowsFromSpecificSheet(
   sheetName: string,
 ): Promise<DataRow[]> {
   const arrayBuffer = await readFileAsArrayBuffer(file);
-  const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+  const workbook = XLSX.read(arrayBuffer, {
+    type: 'array',
+    cellDates: true,
+    sheetRows: 0, // 0 = lire toutes les lignes sans limite
+    bookVBA: true, // Support des macros/VBA
+    cellFormula: true, // Support des formules
+    cellStyles: true, // Support des styles
+  });
 
   if (!workbook.SheetNames.includes(sheetName)) {
     throw new Error(`La feuille "${sheetName}" n'existe pas dans le fichier.`);
