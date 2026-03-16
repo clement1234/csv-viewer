@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import type { ConfigMatchResult } from '../../types/storage.types';
 
 interface AutoDetectionIndicatorProps {
@@ -15,7 +15,7 @@ export function AutoDetectionIndicator({
   matchResult,
   isEnabled,
   onToggle,
-}: AutoDetectionIndicatorProps): JSX.Element | null {
+}: AutoDetectionIndicatorProps): React.JSX.Element | null {
   const [showTooltip, setShowTooltip] = useState(false);
 
   // Ne rien afficher si pas de résultat d'auto-détection

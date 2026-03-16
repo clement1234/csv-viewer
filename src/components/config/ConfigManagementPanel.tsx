@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import type { StoredConfig } from '../../types/storage.types';
 import { Modal } from '../ui/Modal';
 
@@ -26,7 +26,7 @@ export function ConfigManagementPanel({
   onDelete,
   onRename,
   onSelect,
-}: ConfigManagementPanelProps): JSX.Element {
+}: ConfigManagementPanelProps): React.JSX.Element {
   const [configToDelete, setConfigToDelete] = useState<string | null>(null);
   const [configToRename, setConfigToRename] = useState<string | null>(null);
   const [newName, setNewName] = useState('');

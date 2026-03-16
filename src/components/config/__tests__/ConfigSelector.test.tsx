@@ -9,10 +9,10 @@ describe('ConfigSelector', () => {
     {
       name: 'Config 1',
       config: {
-        appBranding: { title: 'Config 1' },
+        app: { title: 'Config 1' },
         columns: {},
-        filters: [],
-        statsCards: [],
+        filters: {},
+        stats: { cards: [], panels: [] },
       },
       createdAt: '2024-01-01T00:00:00.000Z',
       updatedAt: '2024-01-01T00:00:00.000Z',
@@ -20,10 +20,10 @@ describe('ConfigSelector', () => {
     {
       name: 'Config 2',
       config: {
-        appBranding: { title: 'Config 2' },
+        app: { title: 'Config 2' },
         columns: {},
-        filters: [],
-        statsCards: [],
+        filters: {},
+        stats: { cards: [], panels: [] },
       },
       createdAt: '2024-01-02T00:00:00.000Z',
       updatedAt: '2024-01-02T00:00:00.000Z',
@@ -31,10 +31,10 @@ describe('ConfigSelector', () => {
     {
       name: 'Config 3',
       config: {
-        appBranding: { title: 'Config 3' },
+        app: { title: 'Config 3' },
         columns: {},
-        filters: [],
-        statsCards: [],
+        filters: {},
+        stats: { cards: [], panels: [] },
       },
       createdAt: '2024-01-03T00:00:00.000Z',
       updatedAt: '2024-01-03T00:00:00.000Z',

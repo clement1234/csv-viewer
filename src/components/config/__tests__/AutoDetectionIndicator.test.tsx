@@ -9,10 +9,10 @@ describe('AutoDetectionIndicator', () => {
     config: {
       name: 'Test Config',
       config: {
-        appBranding: { title: 'Test' },
+        app: { title: 'Test' },
         columns: {},
-        filters: [],
-        statsCards: [],
+        filters: {},
+        stats: { cards: [], panels: [] },
       },
       createdAt: '2024-01-01T00:00:00.000Z',
       updatedAt: '2024-01-01T00:00:00.000Z',

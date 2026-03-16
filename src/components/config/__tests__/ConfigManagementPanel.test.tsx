@@ -9,10 +9,10 @@ describe('ConfigManagementPanel', () => {
     {
       name: 'Config 1',
       config: {
-        appBranding: { title: 'Config 1' },
+        app: { title: 'Config 1' },
         columns: {},
-        filters: [],
-        statsCards: [],
+        filters: {},
+        stats: { cards: [], panels: [] },
       },
       createdAt: '2024-01-01T10:30:00.000Z',
       updatedAt: '2024-01-02T14:45:00.000Z',
@@ -20,10 +20,10 @@ describe('ConfigManagementPanel', () => {
     {
       name: 'Config 2',
       config: {
-        appBranding: { title: 'Config 2' },
+        app: { title: 'Config 2' },
         columns: {},
-        filters: [],
-        statsCards: [],
+        filters: {},
+        stats: { cards: [], panels: [] },
       },
       createdAt: '2024-01-03T09:15:00.000Z',
       updatedAt: '2024-01-03T09:15:00.000Z',
