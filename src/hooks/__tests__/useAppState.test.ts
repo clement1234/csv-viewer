@@ -148,21 +148,26 @@ describe('useAppState', () => {
     expect(result.current.selectedRowIndex).toBe(2);
   });
 
-  it('should handle config file upload', async () => {
+  it('should handle config file import with name', async () => {
+    localStorage.clear();
     mockCSVParse.mockResolvedValue(sampleParsedRows);
     const { result } = renderHook(() => useAppState());
 
-    await act(async () => {
-      await result.current.handleDataFileUpload(createMockFile('data.csv', 'text/csv'));
+    const configContent = JSON.stringify({
+      app: { title: 'Mon App' },
+      columns: {},
+      filters: {},
+      stats: { cards: [] }
     });
-
-    const configContent = JSON.stringify({ app: { title: 'Mon App' } });
     const configFile = new File([configContent], 'config.json', { type: 'application/json' });
 
     await act(async () => {
-      await result.current.handleConfigFileUpload(configFile);
+      await result.current.handleConfigImport(configFile, 'Test Config');
     });
 
-    expect(result.current.appliedConfig?.app?.title).toBe('Mon App');
+    // Check that config was saved and selected
+    expect(result.current.selectedConfigName).toBe('Test Config');
+    expect(result.current.savedConfigs.length).toBeGreaterThan(0);
+    expect(result.current.savedConfigs[0]?.name).toBe('Test Config');
   });
 });
