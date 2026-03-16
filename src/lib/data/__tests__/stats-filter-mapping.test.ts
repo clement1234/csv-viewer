@@ -155,6 +155,32 @@ describe('buildFilterPayloadFromStatClick', () => {
       });
     });
 
+    it('should handle empty dates (⚠️ (vide)) by converting to empty string', () => {
+      const filterState = createEmptyFilterState();
+      const result = buildFilterPayloadFromStatClick(
+        { panelType: 'countByYearFromDate', columnName: 'date_inscription', clickedValue: '⚠️ (vide)' },
+        filterState,
+      );
+      expect(result).toEqual({
+        type: 'category',
+        filter: { columnName: 'date_inscription', selectedValues: [''], isYearFilter: true },
+      });
+    });
+
+    it('should toggle off empty dates when clicking twice', () => {
+      const filterState = createEmptyFilterState();
+      filterState.categoryFilters = [{ columnName: 'date_inscription', selectedValues: [''], isYearFilter: true }];
+
+      const result = buildFilterPayloadFromStatClick(
+        { panelType: 'countByYearFromDate', columnName: 'date_inscription', clickedValue: '⚠️ (vide)' },
+        filterState,
+      );
+      expect(result).toEqual({
+        type: 'category',
+        filter: { columnName: 'date_inscription', selectedValues: [], isYearFilter: true },
+      });
+    });
+
     it('should remove year from mixed selection', () => {
       const filterState = createEmptyFilterState();
       filterState.categoryFilters = [
@@ -260,6 +286,22 @@ describe('isStatValueActiveInFilters', () => {
       { columnName: 'date', selectedValues: ['2023'], isYearFilter: true },
     ];
     expect(isStatValueActiveInFilters('countByYearFromDate', 'date', '⚠️ 0', filterState)).toBe(false);
+  });
+
+  it('should return true when empty date (⚠️ (vide)) is in category filter', () => {
+    const filterState = createEmptyFilterState();
+    filterState.categoryFilters = [
+      { columnName: 'date', selectedValues: ['', '2023'], isYearFilter: true },
+    ];
+    expect(isStatValueActiveInFilters('countByYearFromDate', 'date', '⚠️ (vide)', filterState)).toBe(true);
+  });
+
+  it('should return false when empty date is not in category filter', () => {
+    const filterState = createEmptyFilterState();
+    filterState.categoryFilters = [
+      { columnName: 'date', selectedValues: ['2023'], isYearFilter: true },
+    ];
+    expect(isStatValueActiveInFilters('countByYearFromDate', 'date', '⚠️ (vide)', filterState)).toBe(false);
   });
 
   it('should return true when multiSelect value is in selectedValues', () => {

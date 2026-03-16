@@ -58,6 +58,10 @@ function buildDateRangeFilterPayload(
   let valueToToggle = clickedYear;
   if (clickedYear.startsWith('⚠️ ')) {
     valueToToggle = clickedYear.slice(3); // Remove "⚠️ " prefix for storage
+    // Special case: "(vide)" represents empty string in the data
+    if (valueToToggle === '(vide)') {
+      valueToToggle = '';
+    }
   }
 
   const isAlreadySelected = currentValues.includes(valueToToggle);
@@ -105,7 +109,11 @@ export function isStatValueActiveInFilters(
       );
 
       // For invalid dates (prefixed with ⚠️), remove the prefix to check
-      const valueToCheck = value.startsWith('⚠️ ') ? value.slice(3) : value;
+      let valueToCheck = value.startsWith('⚠️ ') ? value.slice(3) : value;
+      // Special case: "(vide)" represents empty string in the data
+      if (valueToCheck === '(vide)') {
+        valueToCheck = '';
+      }
       return yearFilter?.selectedValues.includes(valueToCheck) ?? false;
     }
     case 'countBySplitValues': {

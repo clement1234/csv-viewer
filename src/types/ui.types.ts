@@ -19,6 +19,7 @@ export interface DateRangeFilter {
   columnName: string;
   startDate: string | null;
   endDate: string | null;
+  includeEmpty?: boolean;
 }
 
 export interface NumberRangeFilter {

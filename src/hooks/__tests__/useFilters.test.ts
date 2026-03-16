@@ -104,7 +104,7 @@ describe('useFilters', () => {
     expect(result.current.filterState.textFilters).toHaveLength(0);
   });
 
-  it('should remove dateRange filter when both dates are null', () => {
+  it('should remove dateRange filter when both dates are null and includeEmpty is false', () => {
     const { result } = renderHook(() => useFilters());
     act(() => {
       result.current.updateFilter({
@@ -120,6 +120,30 @@ describe('useFilters', () => {
       });
     });
     expect(result.current.filterState.dateRangeFilters).toHaveLength(0);
+  });
+
+  it('should keep dateRange filter when includeEmpty is true even if dates are null', () => {
+    const { result } = renderHook(() => useFilters());
+    act(() => {
+      result.current.updateFilter({
+        type: 'dateRange',
+        filter: { columnName: 'date', startDate: null, endDate: null, includeEmpty: true },
+      });
+    });
+    expect(result.current.filterState.dateRangeFilters).toHaveLength(1);
+    expect(result.current.filterState.dateRangeFilters[0].includeEmpty).toBe(true);
+    expect(result.current.activeFiltersCount).toBe(1);
+  });
+
+  it('should count includeEmpty as active filter', () => {
+    const { result } = renderHook(() => useFilters());
+    act(() => {
+      result.current.updateFilter({
+        type: 'dateRange',
+        filter: { columnName: 'date', startDate: null, endDate: null, includeEmpty: true },
+      });
+    });
+    expect(result.current.activeFiltersCount).toBe(1);
   });
 
   it('should allow year category filter and regular category filter on same column', () => {

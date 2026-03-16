@@ -95,8 +95,8 @@ export function useFilters(initialState?: Partial<FilterState>): UseFiltersRetur
         case 'dateRange': {
           const updatedDateRangeFilters = [...previous.dateRangeFilters];
 
-          // Si startDate et endDate sont null, supprimer le filtre au lieu de le garder
-          if (payload.filter.startDate === null && payload.filter.endDate === null) {
+          // Si startDate, endDate et includeEmpty sont tous vides/false, supprimer le filtre
+          if (payload.filter.startDate === null && payload.filter.endDate === null && !payload.filter.includeEmpty) {
             const filtered = updatedDateRangeFilters.filter(
               (f) => f.columnName !== payload.filter.columnName,
             );
@@ -172,7 +172,7 @@ export function useFilters(initialState?: Partial<FilterState>): UseFiltersRetur
     if (filterState.globalSearch?.searchTerm) count++;
     count += filterState.textFilters.filter((f) => f.searchTerm).length;
     count += filterState.categoryFilters.filter((f) => f.selectedValues.length > 0).length;
-    count += filterState.dateRangeFilters.filter((f) => f.startDate || f.endDate).length;
+    count += filterState.dateRangeFilters.filter((f) => f.startDate || f.endDate || f.includeEmpty).length;
     count += filterState.numberRangeFilters.filter((f) => f.minValue !== null || f.maxValue !== null).length;
     count += filterState.booleanFilters.filter((f) => f.selectedValue !== 'all').length;
     count += filterState.multiSelectFilters.filter((f) => f.selectedValues.length > 0).length;

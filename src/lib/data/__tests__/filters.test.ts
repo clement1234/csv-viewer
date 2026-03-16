@@ -130,6 +130,55 @@ describe('applyAllFiltersToDataRows', () => {
     expect(result).toHaveLength(2);
   });
 
+  it('should exclude empty/invalid dates by default', () => {
+    const dataWithEmptyDates: DataRow[] = [
+      { date_inscription: '2024-01-15' },
+      { date_inscription: '' },
+      { date_inscription: 'invalid' },
+      { date_inscription: '2024-03-20' },
+    ];
+    const schema = [createMockInferredSchema({ columnName: 'date_inscription', detectedType: 'date' })];
+    const filters: FilterState = {
+      ...emptyFilterState(),
+      dateRangeFilters: [{ columnName: 'date_inscription', startDate: '2024-01-01', endDate: '2024-12-31' }],
+    };
+    const result = applyAllFiltersToDataRows(dataWithEmptyDates, filters, schema);
+    expect(result).toHaveLength(2);
+  });
+
+  it('should include empty/invalid dates when includeEmpty is true', () => {
+    const dataWithEmptyDates: DataRow[] = [
+      { date_inscription: '2024-01-15' },
+      { date_inscription: '' },
+      { date_inscription: 'invalid' },
+      { date_inscription: '2024-03-20' },
+    ];
+    const schema = [createMockInferredSchema({ columnName: 'date_inscription', detectedType: 'date' })];
+    const filters: FilterState = {
+      ...emptyFilterState(),
+      dateRangeFilters: [{ columnName: 'date_inscription', startDate: '2024-01-01', endDate: '2024-12-31', includeEmpty: true }],
+    };
+    const result = applyAllFiltersToDataRows(dataWithEmptyDates, filters, schema);
+    expect(result).toHaveLength(4);
+  });
+
+  it('should show only empty/invalid dates when includeEmpty is true with no date range', () => {
+    const dataWithEmptyDates: DataRow[] = [
+      { date_inscription: '2024-01-15' },
+      { date_inscription: '' },
+      { date_inscription: 'invalid' },
+      { date_inscription: '2024-03-20' },
+    ];
+    const schema = [createMockInferredSchema({ columnName: 'date_inscription', detectedType: 'date' })];
+    const filters: FilterState = {
+      ...emptyFilterState(),
+      dateRangeFilters: [{ columnName: 'date_inscription', startDate: null, endDate: null, includeEmpty: true }],
+    };
+    const result = applyAllFiltersToDataRows(dataWithEmptyDates, filters, schema);
+    expect(result).toHaveLength(2);
+    expect(result.every((row) => !row.date_inscription || row.date_inscription === 'invalid')).toBe(true);
+  });
+
   // Number range filter
   it('should filter by number range (inclusive)', () => {
     const filters: FilterState = {
@@ -276,7 +325,7 @@ describe('applyAllFiltersToDataRows', () => {
     expect(result.map((r) => r.nom)).toEqual(['Dupont', 'Martin']);
   });
 
-  it('should exclude empty date values when using year filter', () => {
+  it('should exclude empty date values when selecting only years', () => {
     const dataWithEmptyDates: DataRow[] = [
       { nom: 'Dupont', date_inscription: '2024-01-15' },
       { nom: 'Martin', date_inscription: '' },
@@ -289,5 +338,38 @@ describe('applyAllFiltersToDataRows', () => {
     const result = applyAllFiltersToDataRows(dataWithEmptyDates, filters, createTestSchema());
     expect(result).toHaveLength(2);
     expect(result.every((row) => row.nom !== 'Martin')).toBe(true);
+  });
+
+  it('should filter empty date values when explicitly selected with year filter', () => {
+    const dataWithEmptyDates: DataRow[] = [
+      { nom: 'Dupont', date_inscription: '2024-01-15' },
+      { nom: 'Martin', date_inscription: '' },
+      { nom: 'Durand', date_inscription: '2024-06-10' },
+      { nom: 'Bernard', date_inscription: '' },
+    ];
+    const filters: FilterState = {
+      ...emptyFilterState(),
+      categoryFilters: [{ columnName: 'date_inscription', selectedValues: [''], isYearFilter: true }],
+    };
+    const result = applyAllFiltersToDataRows(dataWithEmptyDates, filters, createTestSchema());
+    expect(result).toHaveLength(2);
+    expect(result.every((row) => row.date_inscription === '')).toBe(true);
+  });
+
+  it('should allow mixing years and empty dates in year filter', () => {
+    const dataWithEmptyDates: DataRow[] = [
+      { nom: 'Dupont', date_inscription: '2024-01-15' },
+      { nom: 'Martin', date_inscription: '' },
+      { nom: 'Durand', date_inscription: '2023-06-10' },
+      { nom: 'Bernard', date_inscription: '' },
+      { nom: 'Petit', date_inscription: '2022-01-01' },
+    ];
+    const filters: FilterState = {
+      ...emptyFilterState(),
+      categoryFilters: [{ columnName: 'date_inscription', selectedValues: ['2024', ''], isYearFilter: true }],
+    };
+    const result = applyAllFiltersToDataRows(dataWithEmptyDates, filters, createTestSchema());
+    expect(result).toHaveLength(3); // Dupont (2024), Martin (empty), Bernard (empty)
+    expect(result.map((r) => r.nom).sort()).toEqual(['Bernard', 'Dupont', 'Martin']);
   });
 });

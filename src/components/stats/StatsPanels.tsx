@@ -32,7 +32,12 @@ function countByYearFromDateColumn(rows: DataRow[], column: string): CountMap {
   const counts: CountMap = new Map();
   for (const row of rows) {
     const dateValue = row[column] ?? '';
-    if (dateValue === '') continue;
+    if (dateValue === '') {
+      // Count empty dates as a special invalid category
+      const emptyKey = '⚠️ (vide)';
+      counts.set(emptyKey, (counts.get(emptyKey) ?? 0) + 1);
+      continue;
+    }
     const dateObj = parseDateStringToDateObject(dateValue);
     if (dateObj) {
       const year = String(dateObj.getFullYear());

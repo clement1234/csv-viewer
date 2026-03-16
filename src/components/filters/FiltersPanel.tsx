@@ -124,8 +124,9 @@ export function FiltersPanel({
                 label={config.columns?.labels?.[col] ?? col}
                 startDate={existing?.startDate ?? null}
                 endDate={existing?.endDate ?? null}
-                onChange={(startDate, endDate) =>
-                  onUpdateFilter({ type: 'dateRange', filter: { columnName: col, startDate, endDate } })
+                includeEmpty={existing?.includeEmpty}
+                onChange={(startDate, endDate, includeEmpty) =>
+                  onUpdateFilter({ type: 'dateRange', filter: { columnName: col, startDate, endDate, includeEmpty } })
                 }
               />
             );

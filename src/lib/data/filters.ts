@@ -51,7 +51,6 @@ function applyCategoryFilters(data: DataRow[], filters: FilterState['categoryFil
       // Year filter: extract year from valid dates OR match invalid dates exactly
       result = result.filter((row) => {
         const dateValue = row[filter.columnName] ?? '';
-        if (!dateValue) return false;
 
         const dateObj = parseDateStringToDateObject(dateValue);
         if (dateObj) {
@@ -59,7 +58,7 @@ function applyCategoryFilters(data: DataRow[], filters: FilterState['categoryFil
           const year = String(dateObj.getFullYear());
           return selectedSet.has(year);
         } else {
-          // Invalid date: check if the exact value is selected
+          // Invalid or empty date: check if the exact value is selected
           return selectedSet.has(dateValue);
         }
       });
@@ -74,13 +73,24 @@ function applyCategoryFilters(data: DataRow[], filters: FilterState['categoryFil
 function applyDateRangeFilters(data: DataRow[], filters: FilterState['dateRangeFilters']): DataRow[] {
   let result = data;
   for (const filter of filters) {
-    if (filter.startDate === null && filter.endDate === null) continue;
+    if (filter.startDate === null && filter.endDate === null && !filter.includeEmpty) continue;
     const startDate = filter.startDate ? parseDateStringToDateObject(filter.startDate) : null;
     const endDate = filter.endDate ? parseDateStringToDateObject(filter.endDate) : null;
 
     result = result.filter((row) => {
       const dateValue = parseDateStringToDateObject(row[filter.columnName] ?? '');
-      if (!dateValue) return false;
+
+      // Si la date est invalide/vide
+      if (!dateValue) {
+        return filter.includeEmpty === true;
+      }
+
+      // Si la date est valide mais qu'il n'y a pas de plage définie, on l'exclut si includeEmpty est la seule option active
+      if (!startDate && !endDate) {
+        return false;
+      }
+
+      // Si la date est valide, vérifier la plage
       if (startDate && dateValue < startDate) return false;
       if (endDate && dateValue > endDate) return false;
       return true;
