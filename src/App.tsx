@@ -42,9 +42,11 @@ function App(): React.JSX.Element {
   const [pendingConfigFile, setPendingConfigFile] = useState<File | null>(null);
   const [configNameInput, setConfigNameInput] = useState('');
 
-  const handleRowClick = useCallback((_row: DataRow, index: number): void => {
-    selectRow(index);
-  }, [selectRow]);
+  const handleRowClick = useCallback((_row: DataRow, localIndex: number): void => {
+    // Convertir l'index local (dans paginatedData) en index global (dans sortedData)
+    const globalIndex = (pagination.currentPage - 1) * pagination.rowsPerPage + localIndex;
+    selectRow(globalIndex);
+  }, [selectRow, pagination]);
 
   const handleExportCSV = useCallback((): void => {
     exportDataRowsToCSVFile(
