@@ -9,6 +9,7 @@ interface UsePaginationReturn {
   setRowsPerPage: (rowsPerPage: PaginationState['rowsPerPage']) => void;
   nextPage: () => void;
   prevPage: () => void;
+  resetToFirstPage: () => void;
   isFirstPage: boolean;
   isLastPage: boolean;
 }
@@ -48,6 +49,10 @@ export function usePagination(
     setCurrentPage((prev) => Math.max(prev - 1, 1));
   }, []);
 
+  const resetToFirstPage = useCallback((): void => {
+    setCurrentPage(1);
+  }, []);
+
   const isFirstPage = currentPage === 1;
   const isLastPage = currentPage >= totalPages;
 
@@ -59,6 +64,7 @@ export function usePagination(
     setRowsPerPage,
     nextPage,
     prevPage,
+    resetToFirstPage,
     isFirstPage,
     isLastPage,
   };
