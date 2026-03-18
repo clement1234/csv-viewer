@@ -140,10 +140,6 @@ export function useAppState(): UseAppStateReturn {
     }
   }, []);
 
-  const resetFilters = useCallback((): void => {
-    resetFiltersInternal();
-  }, [resetFiltersInternal]);
-
   const filteredData = useMemo(
     () => applyAllFiltersToDataRows(parsedData, filterState, inferredSchema),
     [parsedData, filterState, inferredSchema],
@@ -154,7 +150,17 @@ export function useAppState(): UseAppStateReturn {
     [filteredData, sortState, inferredSchema],
   );
 
-  const pagination = usePagination(sortedData.length);
+  const { resetToFirstPage, ...pagination } = usePagination(sortedData.length);
+
+  const resetFilters = useCallback((): void => {
+    resetFiltersInternal();
+    resetToFirstPage();
+  }, [resetFiltersInternal, resetToFirstPage]);
+
+  const updateFilterAndResetPage = useCallback((payload: FilterUpdatePayload): void => {
+    updateFilter(payload);
+    resetToFirstPage();
+  }, [updateFilter, resetToFirstPage]);
 
   const paginatedData = useMemo(() => {
     const startIndex = (pagination.currentPage - 1) * pagination.rowsPerPage;
@@ -388,7 +394,7 @@ export function useAppState(): UseAppStateReturn {
     selectRow,
     navigateRow,
     handleSortChange,
-    updateFilter,
+    updateFilter: updateFilterAndResetPage,
     resetFilters,
     removeToast,
     addToast,
