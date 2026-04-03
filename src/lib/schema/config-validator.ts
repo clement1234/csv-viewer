@@ -14,6 +14,7 @@ const VALID_DATE_FORMATS = new Set(['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY']);
 const VALID_BADGE_VARIANTS = new Set(['solid', 'outline', 'subtle']);
 const VALID_LINK_TYPES = new Set(['mailto', 'tel', 'url']);
 const VALID_FORMAT_TYPES = new Set(['date', 'badge', 'splitBadges', 'link']);
+const VALID_COMPUTED_DATE_FORMATS = new Set(['excel', 'YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -123,6 +124,50 @@ function validateColumnFormatConfig(
   return true;
 }
 
+function validateComputedColumnConfig(
+  key: string,
+  value: unknown,
+  errors: string[]
+): boolean {
+  if (!isRecord(value)) {
+    errors.push(`columns.computed.${key}: doit être un objet`);
+    return false;
+  }
+
+  if (value.type === 'ageFromDate') {
+    if (typeof value.sourceColumn !== 'string') {
+      errors.push(`columns.computed.${key}: sourceColumn doit être une string`);
+      return false;
+    }
+    if (!VALID_COMPUTED_DATE_FORMATS.has(value.dateFormat as string)) {
+      errors.push(`columns.computed.${key}: dateFormat doit être l'un de : excel, YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY`);
+      return false;
+    }
+    return true;
+  }
+
+  errors.push(`columns.computed.${key}: type "${value.type}" non supporté`);
+  return false;
+}
+
+function validateComputedColumnsConfig(
+  value: unknown,
+  errors: string[]
+): boolean {
+  if (!isRecord(value)) {
+    errors.push('columns.computed: doit être un objet');
+    return false;
+  }
+
+  let allValid = true;
+  for (const [key, config] of Object.entries(value)) {
+    if (!validateComputedColumnConfig(key, config, errors)) {
+      allValid = false;
+    }
+  }
+  return allValid;
+}
+
 function validateColumnsConfig(value: unknown, errors: string[]): boolean {
   if (!isRecord(value)) {
     errors.push('La section "columns" doit être un objet.');
@@ -159,6 +204,11 @@ function validateColumnsConfig(value: unknown, errors: string[]): boolean {
       if (!validateColumnFormatConfig(key, formatValue, errors)) return false;
     }
   }
+  if (value.computed !== undefined) {
+    if (!validateComputedColumnsConfig(value.computed, errors)) {
+      return false;
+    }
+  }
   return true;
 }
 
@@ -190,10 +240,18 @@ function validateStatsCardConfig(value: unknown): boolean {
 
 function validateStatsPanelConfig(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  const validTypes = ['countByColumn', 'countByYearFromDate', 'countBySplitValues'];
-  return validTypes.includes(value.type as string) &&
-    typeof value.column === 'string' &&
-    typeof value.label === 'string';
+  const validTypes = ['countByColumn', 'countByYearFromDate', 'countBySplitValues', 'numericStats'];
+
+  if (!validTypes.includes(value.type as string)) return false;
+  if (typeof value.column !== 'string') return false;
+  if (typeof value.label !== 'string') return false;
+
+  // unit est optionnel pour numericStats
+  if (value.type === 'numericStats' && value.unit !== undefined) {
+    if (typeof value.unit !== 'string') return false;
+  }
+
+  return true;
 }
 
 function validateStatsConfig(value: unknown, errors: string[]): boolean {

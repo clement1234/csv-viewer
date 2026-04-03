@@ -126,4 +126,135 @@ describe('validateConfigAndReturnResult', () => {
     const result = validateConfigAndReturnResult({ filters: { dropdown: 'not_array' } });
     expect(result.isValid).toBe(false);
   });
+
+  it('should validate computed columns config with ageFromDate', () => {
+    const rawConfig = {
+      columns: {
+        computed: {
+          age: {
+            type: 'ageFromDate',
+            sourceColumn: 'Date de naissance',
+            dateFormat: 'excel',
+          },
+        },
+      },
+    };
+    const result = validateConfigAndReturnResult(rawConfig);
+    expect(result.isValid).toBe(true);
+  });
+
+  it('should validate computed columns with YYYY-MM-DD format', () => {
+    const rawConfig = {
+      columns: {
+        computed: {
+          age: {
+            type: 'ageFromDate',
+            sourceColumn: 'birthdate',
+            dateFormat: 'YYYY-MM-DD',
+          },
+        },
+      },
+    };
+    const result = validateConfigAndReturnResult(rawConfig);
+    expect(result.isValid).toBe(true);
+  });
+
+  it('should reject computed column with missing sourceColumn', () => {
+    const rawConfig = {
+      columns: {
+        computed: {
+          age: {
+            type: 'ageFromDate',
+            dateFormat: 'excel',
+          },
+        },
+      },
+    };
+    const result = validateConfigAndReturnResult(rawConfig);
+    expect(result.isValid).toBe(false);
+    expect(result.errors?.some((e) => e.includes('sourceColumn'))).toBe(true);
+  });
+
+  it('should reject computed column with invalid dateFormat', () => {
+    const rawConfig = {
+      columns: {
+        computed: {
+          age: {
+            type: 'ageFromDate',
+            sourceColumn: 'birthdate',
+            dateFormat: 'invalid',
+          },
+        },
+      },
+    };
+    const result = validateConfigAndReturnResult(rawConfig);
+    expect(result.isValid).toBe(false);
+    expect(result.errors?.some((e) => e.includes('dateFormat'))).toBe(true);
+  });
+
+  it('should reject computed column with unsupported type', () => {
+    const rawConfig = {
+      columns: {
+        computed: {
+          fullName: {
+            type: 'concat',
+            sourceColumns: ['firstName', 'lastName'],
+          },
+        },
+      },
+    };
+    const result = validateConfigAndReturnResult(rawConfig);
+    expect(result.isValid).toBe(false);
+    expect(result.errors?.some((e) => e.includes('non supporté'))).toBe(true);
+  });
+
+  it('should validate numericStats panel', () => {
+    const rawConfig = {
+      stats: {
+        panels: [
+          {
+            type: 'numericStats',
+            column: 'age',
+            label: 'Statistiques d\'âge',
+            unit: 'ans',
+          },
+        ],
+      },
+    };
+    const result = validateConfigAndReturnResult(rawConfig);
+    expect(result.isValid).toBe(true);
+  });
+
+  it('should validate numericStats panel without unit', () => {
+    const rawConfig = {
+      stats: {
+        panels: [
+          {
+            type: 'numericStats',
+            column: 'score',
+            label: 'Statistiques de score',
+          },
+        ],
+      },
+    };
+    const result = validateConfigAndReturnResult(rawConfig);
+    expect(result.isValid).toBe(true);
+  });
+
+  it('should reject numericStats panel with invalid unit type', () => {
+    const rawConfig = {
+      stats: {
+        panels: [
+          {
+            type: 'numericStats',
+            column: 'age',
+            label: 'Statistiques d\'âge',
+            unit: 123,
+          },
+        ],
+      },
+    };
+    const result = validateConfigAndReturnResult(rawConfig);
+    expect(result.isValid).toBe(false);
+  });
 });

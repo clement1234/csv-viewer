@@ -23,6 +23,10 @@ export function buildFilterPayloadFromStatClick(
       return buildDateRangeFilterPayload(statClick.columnName, statClick.clickedValue, filterState);
     case 'countBySplitValues':
       return buildMultiSelectFilterPayload(statClick.columnName, statClick.clickedValue, filterState);
+    case 'numericStats':
+      // Les stats numériques ne génèrent pas de filtres cliquables
+      // Retourner un payload vide (pas d'action)
+      return { type: 'category', filter: { columnName: '', selectedValues: [] } };
   }
 }
 
@@ -119,6 +123,10 @@ export function isStatValueActiveInFilters(
     case 'countBySplitValues': {
       const multiSelectFilter = filterState.multiSelectFilters.find((f) => f.columnName === columnName);
       return multiSelectFilter?.selectedValues.includes(value) ?? false;
+    }
+    case 'numericStats': {
+      // Les stats numériques ne sont jamais actives dans les filtres
+      return false;
     }
   }
 }
