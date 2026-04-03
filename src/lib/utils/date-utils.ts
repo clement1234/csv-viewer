@@ -1,6 +1,6 @@
 import type { DateFormat } from '../../types/config.types.ts';
 
-const ISO_DATE_PATTERN = /^\d{4}[-/]\d{2}[-/]\d{2}$/;
+const ISO_DATE_PATTERN = /^\d{4}[-/]\d{2}[-/]\d{2}(?:\s+\d{2}:\d{2}:\d{2})?$/;
 const DMY_DATE_PATTERN = /^\d{2}[-/]\d{2}[-/]\d{4}$/;
 
 const MIN_VALID_YEAR = 1900;
@@ -60,7 +60,10 @@ export function parseDateStringToDateObject(
   const detectedFormat = format ?? detectDateFormatFromString(str);
   if (!detectedFormat) return null;
 
-  const parts = str.split(/[-/]/);
+  // Strip l'heure si présente (ex: "1967-01-05 00:00:00" → "1967-01-05")
+  const dateOnly = str.split(' ')[0];
+
+  const parts = dateOnly.split(/[-/]/);
   if (parts.length !== 3) return null;
 
   let year: number;

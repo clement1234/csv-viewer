@@ -9,6 +9,7 @@ import { parseXLSXFirstSheetWithAvailableSheets, extractRowsFromSpecificSheet } 
 import { inferSchemaFromDataRows, selectDefaultVisibleColumns } from '../lib/schema/schema-inference.ts';
 import { validateConfigAndReturnResult } from '../lib/schema/config-validator.ts';
 import { applyConfigToSchemaAndData } from '../lib/schema/config-applicator.ts';
+import { applyComputedColumnsToDataRows } from '../lib/schema/computed-columns.ts';
 import { applyAllFiltersToDataRows } from '../lib/data/filters.ts';
 import { sortDataRowsByColumn } from '../lib/data/sorting.ts';
 import { useFilters } from './useFilters.ts';
@@ -169,18 +170,25 @@ export function useAppState(): UseAppStateReturn {
   }, [sortedData, pagination.currentPage, pagination.rowsPerPage]);
 
   const initializeFromParsedData = useCallback((data: DataRow[], config: Config | null): void => {
-    const schema = inferSchemaFromDataRows(data);
+    // Application des colonnes calculées AVANT inférence de schéma
+    let processedData = data;
+    if (config?.columns?.computed) {
+      processedData = applyComputedColumnsToDataRows(data, config.columns.computed);
+    }
+
+    // Inférence de schéma sur les données enrichies
+    const schema = inferSchemaFromDataRows(processedData);
     let finalConfig = config;
     let warnings: string[] = [];
 
     if (config) {
-      const result = applyConfigToSchemaAndData(config, schema, data);
+      const result = applyConfigToSchemaAndData(config, schema, processedData);
       finalConfig = result.appliedConfig;
       warnings = result.warnings;
-      data = result.normalizedData;
+      processedData = result.normalizedData;
     }
 
-    setParsedData(data);
+    setParsedData(processedData);
     setInferredSchema(schema);
     setAppliedConfig(finalConfig);
     setConfigWarnings(warnings);

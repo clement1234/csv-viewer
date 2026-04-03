@@ -7,10 +7,10 @@ import type { StatsPanelConfig } from '../../../types/config.types.ts';
 import type { FilterState } from '../../../types/ui.types.ts';
 
 const sampleRows: DataRow[] = [
-  { nom: 'Dupont', statut: 'actif', date: '2022-05-10', tags: 'react|node' },
-  { nom: 'Martin', statut: 'inactif', date: '2023-03-15', tags: 'python' },
-  { nom: 'Durand', statut: 'actif', date: '2022-11-20', tags: 'react|python' },
-  { nom: 'Petit', statut: 'actif', date: '2024-01-05', tags: 'node' },
+  { nom: 'Dupont', statut: 'actif', date: '2022-05-10', tags: 'react|node', age: '25' },
+  { nom: 'Martin', statut: 'inactif', date: '2023-03-15', tags: 'python', age: '30' },
+  { nom: 'Durand', statut: 'actif', date: '2022-11-20', tags: 'react|python', age: '35' },
+  { nom: 'Petit', statut: 'actif', date: '2024-01-05', tags: 'node', age: '40' },
 ];
 
 function createEmptyFilterState(): FilterState {
@@ -180,7 +180,7 @@ describe('StatsPanels', () => {
 
   it('should display "-" for values not in filtered data', () => {
     const filteredRows: DataRow[] = [
-      { nom: 'Dupont', statut: 'actif', date: '2022-05-10', tags: 'react|node' },
+      { nom: 'Dupont', statut: 'actif', date: '2022-05-10', tags: 'react|node', age: '25' },
     ];
     const panels: StatsPanelConfig[] = [
       { type: 'countByColumn', column: 'statut', label: 'Par statut' },
@@ -199,5 +199,87 @@ describe('StatsPanels', () => {
     expect(screen.getByText('1')).toBeInTheDocument();
     expect(screen.getByText('inactif')).toBeInTheDocument();
     expect(screen.getByText('-')).toBeInTheDocument();
+  });
+
+  it('should display numericStats panel with unit', () => {
+    const panels: StatsPanelConfig[] = [
+      { type: 'numericStats', column: 'age', label: 'Statistiques d\'âge', unit: 'ans' },
+    ];
+    render(
+      <StatsPanels
+        panels={panels}
+        allRows={sampleRows}
+        filteredRows={sampleRows}
+        filterState={createEmptyFilterState()}
+        onStatValueClick={noopClick}
+      />,
+    );
+    expect(screen.getByText('Statistiques d\'âge')).toBeInTheDocument();
+    expect(screen.getByText('Moyenne')).toBeInTheDocument();
+    expect(screen.getAllByText('32.5 ans').length).toBeGreaterThan(0); // Moyenne et Q2
+    expect(screen.getByText('Min')).toBeInTheDocument();
+    expect(screen.getByText('25.0 ans')).toBeInTheDocument();
+    expect(screen.getByText('Q4 (100%)')).toBeInTheDocument();
+    expect(screen.getByText('40.0 ans')).toBeInTheDocument();
+  });
+
+  it('should display numericStats panel without unit', () => {
+    const panels: StatsPanelConfig[] = [
+      { type: 'numericStats', column: 'age', label: 'Stats' },
+    ];
+    render(
+      <StatsPanels
+        panels={panels}
+        allRows={sampleRows}
+        filteredRows={sampleRows}
+        filterState={createEmptyFilterState()}
+        onStatValueClick={noopClick}
+      />,
+    );
+    expect(screen.getByText('Stats')).toBeInTheDocument();
+    expect(screen.getAllByText('32.5').length).toBeGreaterThan(0); // Sans unité, moyenne et Q2
+  });
+
+  it('should display message when no numeric data available', () => {
+    const rowsWithoutAge: DataRow[] = [
+      { nom: 'Dupont', statut: 'actif' },
+      { nom: 'Martin', statut: 'inactif' },
+    ];
+    const panels: StatsPanelConfig[] = [
+      { type: 'numericStats', column: 'age', label: 'Stats', unit: 'ans' },
+    ];
+    render(
+      <StatsPanels
+        panels={panels}
+        allRows={rowsWithoutAge}
+        filteredRows={rowsWithoutAge}
+        filterState={createEmptyFilterState()}
+        onStatValueClick={noopClick}
+      />,
+    );
+    expect(screen.getByText('Stats')).toBeInTheDocument();
+    expect(screen.getByText('Aucune donnée numérique disponible')).toBeInTheDocument();
+  });
+
+  it('should display all quartiles in numericStats panel', () => {
+    const panels: StatsPanelConfig[] = [
+      { type: 'numericStats', column: 'age', label: 'Stats' },
+    ];
+    render(
+      <StatsPanels
+        panels={panels}
+        allRows={sampleRows}
+        filteredRows={sampleRows}
+        filterState={createEmptyFilterState()}
+        onStatValueClick={noopClick}
+      />,
+    );
+    expect(screen.getByText('Q1 (25%)')).toBeInTheDocument();
+    expect(screen.getByText('Q2 (50%)')).toBeInTheDocument();
+    expect(screen.getByText('Q3 (75%)')).toBeInTheDocument();
+    expect(screen.getByText('Q4 (100%)')).toBeInTheDocument();
+    expect(screen.getByText('Écart-type')).toBeInTheDocument();
+    expect(screen.getByText('Nombre de valeurs')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument(); // count
   });
 });

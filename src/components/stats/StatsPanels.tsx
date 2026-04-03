@@ -5,6 +5,11 @@ import type { FilterState } from '../../types/ui.types.ts';
 import { isStatValueActiveInFilters } from '../../lib/data/stats-filter-mapping.ts';
 import { parseDateStringToDateObject } from '../../lib/utils/date-utils.ts';
 import { splitStringBySeparator } from '../../lib/utils/string-utils.ts';
+import {
+  extractNumericValuesFromColumn,
+  calculateNumericStats,
+  type NumericStatsResult,
+} from '../../lib/data/numeric-stats.ts';
 
 interface StatsPanelsProps {
   panels: StatsPanelConfig[];
@@ -16,6 +21,12 @@ interface StatsPanelsProps {
 
 type CountMap = Map<string, number>;
 type CountDisplay = number | '-';
+
+interface PanelData {
+  type: 'count' | 'numeric';
+  countMap?: CountMap;
+  stats?: NumericStatsResult | null;
+}
 
 function countByColumnValues(rows: DataRow[], column: string): CountMap {
   const counts: CountMap = new Map();
@@ -68,15 +79,27 @@ function countBySplitColumnValues(rows: DataRow[], column: string): CountMap {
   return counts;
 }
 
-function computePanelData(panel: StatsPanelConfig, rows: DataRow[]): CountMap {
+function computePanelData(panel: StatsPanelConfig, rows: DataRow[]): PanelData {
+  if (panel.type === 'numericStats') {
+    const values = extractNumericValuesFromColumn(rows, panel.column);
+    const stats = calculateNumericStats(values);
+    return { type: 'numeric', stats };
+  }
+
+  let countMap: CountMap;
   switch (panel.type) {
     case 'countByColumn':
-      return countByColumnValues(rows, panel.column);
+      countMap = countByColumnValues(rows, panel.column);
+      break;
     case 'countByYearFromDate':
-      return countByYearFromDateColumn(rows, panel.column);
+      countMap = countByYearFromDateColumn(rows, panel.column);
+      break;
     case 'countBySplitValues':
-      return countBySplitColumnValues(rows, panel.column);
+      countMap = countBySplitColumnValues(rows, panel.column);
+      break;
   }
+
+  return { type: 'count', countMap };
 }
 
 function sortedEntries(
@@ -116,6 +139,74 @@ function sortedEntries(
     const bVal = entryB[1] === '-' ? 0 : entryB[1];
     return bVal - aVal;
   });
+}
+
+interface NumericStatsPanelProps {
+  label: string;
+  stats: NumericStatsResult | null;
+  unit?: string;
+}
+
+function NumericStatsPanel({ label, stats, unit }: NumericStatsPanelProps): React.JSX.Element {
+  const formatValue = (value: number): string => {
+    const formatted = value.toFixed(1);
+    return unit ? `${formatted} ${unit}` : formatted;
+  };
+
+  if (!stats) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <h3 className="px-4 py-3 text-sm font-semibold text-gray-700 bg-gray-50 border-b border-gray-200">
+          {label}
+        </h3>
+        <div className="px-4 py-8 text-center text-sm text-gray-500">
+          Aucune donnée numérique disponible
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <h3 className="px-4 py-3 text-sm font-semibold text-gray-700 bg-gray-50 border-b border-gray-200">
+        {label}
+      </h3>
+      <dl className="px-4 py-3 space-y-2 text-sm">
+        <div className="flex justify-between py-1">
+          <dt className="text-gray-600">Moyenne</dt>
+          <dd className="font-medium text-gray-900">{formatValue(stats.mean)}</dd>
+        </div>
+        <div className="flex justify-between py-1">
+          <dt className="text-gray-600">Min</dt>
+          <dd className="font-medium text-gray-900">{formatValue(stats.min)}</dd>
+        </div>
+        <div className="flex justify-between py-1">
+          <dt className="text-gray-600">Q1 (25%)</dt>
+          <dd className="font-medium text-gray-900">{formatValue(stats.q1)}</dd>
+        </div>
+        <div className="flex justify-between py-1">
+          <dt className="text-gray-600">Q2 (50%)</dt>
+          <dd className="font-medium text-gray-900">{formatValue(stats.q2)}</dd>
+        </div>
+        <div className="flex justify-between py-1">
+          <dt className="text-gray-600">Q3 (75%)</dt>
+          <dd className="font-medium text-gray-900">{formatValue(stats.q3)}</dd>
+        </div>
+        <div className="flex justify-between py-1">
+          <dt className="text-gray-600">Q4 (100%)</dt>
+          <dd className="font-medium text-gray-900">{formatValue(stats.q4)}</dd>
+        </div>
+        <div className="flex justify-between py-1">
+          <dt className="text-gray-600">Écart-type</dt>
+          <dd className="font-medium text-gray-900">{formatValue(stats.stdDev)}</dd>
+        </div>
+        <div className="flex justify-between border-t border-gray-100 pt-2 mt-2">
+          <dt className="text-gray-500 text-xs">Nombre de valeurs</dt>
+          <dd className="text-gray-500 text-xs">{stats.count}</dd>
+        </div>
+      </dl>
+    </div>
+  );
 }
 
 interface PanelTableProps {
@@ -173,16 +264,25 @@ function PanelTable({ label, data, panelType, columnName, filterState, onValueCl
 export function StatsPanels({ panels, allRows, filteredRows, filterState, onStatValueClick }: StatsPanelsProps): React.JSX.Element | null {
   const panelDataList = useMemo(
     () => panels.map((panel) => {
-      const allValuesMap = computePanelData(panel, allRows);
-      const filteredValuesMap = computePanelData(panel, filteredRows);
+      const filteredData = computePanelData(panel, filteredRows);
 
-      const mergedMap: Map<string, CountDisplay> = new Map();
-      for (const [value] of allValuesMap) {
-        const filteredCount = filteredValuesMap.get(value) ?? 0;
-        mergedMap.set(value, filteredCount === 0 ? '-' : filteredCount);
+      // Pour les panels numericStats, on utilise directement les données filtrées
+      if (filteredData.type === 'numeric') {
+        return filteredData;
       }
 
-      return mergedMap;
+      // Pour les panels de comptage, on merge avec les données complètes
+      const allData = computePanelData(panel, allRows);
+      const mergedMap: Map<string, CountDisplay> = new Map();
+
+      if (allData.type === 'count' && allData.countMap && filteredData.countMap) {
+        for (const [value] of allData.countMap) {
+          const filteredCount = filteredData.countMap.get(value) ?? 0;
+          mergedMap.set(value, filteredCount === 0 ? '-' : filteredCount);
+        }
+      }
+
+      return { type: 'count' as const, countMap: mergedMap };
     }),
     [panels, allRows, filteredRows],
   );
@@ -191,17 +291,38 @@ export function StatsPanels({ panels, allRows, filteredRows, filterState, onStat
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {panels.map((panel, panelIndex) => (
-        <PanelTable
-          key={`${panel.type}-${panel.column}-${panelIndex}`}
-          label={panel.label}
-          data={panelDataList[panelIndex]}
-          panelType={panel.type}
-          columnName={panel.column}
-          filterState={filterState}
-          onValueClick={(value) => onStatValueClick(panel.type, panel.column, value)}
-        />
-      ))}
+      {panels.map((panel, panelIndex) => {
+        const panelData = panelDataList[panelIndex];
+
+        // Rendu spécifique pour numericStats
+        if (panel.type === 'numericStats' && panelData.type === 'numeric') {
+          return (
+            <NumericStatsPanel
+              key={`${panel.type}-${panel.column}-${panelIndex}`}
+              label={panel.label}
+              stats={panelData.stats ?? null}
+              unit={panel.unit}
+            />
+          );
+        }
+
+        // Rendu pour les autres types de panels
+        if (panelData.type === 'count' && panelData.countMap) {
+          return (
+            <PanelTable
+              key={`${panel.type}-${panel.column}-${panelIndex}`}
+              label={panel.label}
+              data={panelData.countMap}
+              panelType={panel.type}
+              columnName={panel.column}
+              filterState={filterState}
+              onValueClick={(value) => onStatValueClick(panel.type, panel.column, value)}
+            />
+          );
+        }
+
+        return null;
+      })}
     </div>
   );
 }

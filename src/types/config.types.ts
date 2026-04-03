@@ -22,11 +22,22 @@ export type ColumnFormatConfig =
   | { type: 'splitBadges'; separator: '|' | ',' | ';' }
   | { type: 'link'; linkType: LinkType };
 
+export type ComputedColumnConfig = {
+  type: 'ageFromDate';
+  sourceColumn: string;
+  dateFormat: 'excel' | DateFormat;
+};
+
+export interface ComputedColumnsConfig {
+  [columnName: string]: ComputedColumnConfig;
+}
+
 export interface ColumnsConfig {
   defaultVisible?: string[];
   labels?: Record<string, string>;
   aliases?: Record<string, string>;
   formats?: Record<string, ColumnFormatConfig>;
+  computed?: ComputedColumnsConfig;
 }
 
 export interface FiltersConfig {
@@ -46,7 +57,8 @@ export type StatsCardConfig =
 export type StatsPanelConfig =
   | { type: 'countByColumn'; column: string; label: string }
   | { type: 'countByYearFromDate'; column: string; label: string }
-  | { type: 'countBySplitValues'; column: string; label: string };
+  | { type: 'countBySplitValues'; column: string; label: string }
+  | { type: 'numericStats'; column: string; label: string; unit?: string };
 
 export interface StatsConfig {
   cards?: StatsCardConfig[];
