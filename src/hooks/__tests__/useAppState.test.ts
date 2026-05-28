@@ -29,6 +29,7 @@ function createMockFile(name: string, type: string): File {
 
 describe('useAppState', () => {
   beforeEach(() => {
+    localStorage.clear();
     vi.clearAllMocks();
   });
 
@@ -38,6 +39,16 @@ describe('useAppState', () => {
     expect(result.current.inferredSchema).toEqual([]);
     expect(result.current.appliedConfig).toBeNull();
     expect(result.current.selectedRowIndex).toBeNull();
+  });
+
+  it('should expose built-in configs on startup', () => {
+    const { result } = renderHook(() => useAppState());
+
+    expect(result.current.savedConfigs.map((config) => config.name)).toEqual([
+      'VA-communauté',
+      'Gestion des membres',
+    ]);
+    expect(result.current.selectedConfigName).toBeNull();
   });
 
   it('should parse CSV file on data upload', async () => {
@@ -168,6 +179,6 @@ describe('useAppState', () => {
     // Check that config was saved and selected
     expect(result.current.selectedConfigName).toBe('Test Config');
     expect(result.current.savedConfigs.length).toBeGreaterThan(0);
-    expect(result.current.savedConfigs[0]?.name).toBe('Test Config');
+    expect(result.current.savedConfigs.some((config) => config.name === 'Test Config')).toBe(true);
   });
 });

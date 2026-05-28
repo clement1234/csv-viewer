@@ -20,7 +20,14 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(xargs git rm:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(wc:*)",
+      "Bash(claude:*)",
+      "Bash(kill:*)",
+      "Bash(lsof:*)"
     ]
   }
 }

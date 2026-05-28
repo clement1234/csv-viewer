@@ -26,6 +26,7 @@ const sampleParsedRows = [
 
 describe('App', () => {
   beforeEach(() => {
+    localStorage.clear();
     vi.clearAllMocks();
   });
 
@@ -33,6 +34,16 @@ describe('App', () => {
     render(<App />);
     expect(screen.getByText(/csv\/excel viewer/i)).toBeInTheDocument();
     expect(screen.getByText(/glissez-déposez/i)).toBeInTheDocument();
+  });
+
+  it('should let users choose a built-in config from startup screen', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: /sélectionner une configuration/i }));
+
+    expect(screen.getByRole('button', { name: /VA-communauté/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Gestion des membres/ })).toBeInTheDocument();
   });
 
   it('should show data table after CSV upload', async () => {

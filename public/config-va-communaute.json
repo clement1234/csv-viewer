@@ -1,33 +1,34 @@
 {
   "app": {
-    "title": "VA-Communauté",
-    "subtitle": "Gestion de la communauté Vivre et Aimer"
+    "title": "Gestion des Membres",
+    "subtitle": "Base de données des membres de l'association"
   },
   "columns": {
-    "defaultVisible": ["nom", "prenom", "email", "ville", "statut", "annee_adhesion"],
+    "defaultVisible": [
+      "id_du_contact",
+      "nom",
+      "prenom",
+      "age",
+      "statut_adherent",
+      "region",
+      "departement",
+      "secteurgroupe_avancees",
+      "session_amour_et_engagement",
+      "session_aimer_dans_la_duree"
+    ],
     "labels": {
-      "nom": "Nom",
-      "prenom": "Prénom",
-      "email": "Email",
-      "telephone": "Téléphone",
-      "ville": "Ville",
-      "code_postal": "Code Postal",
-      "date_naissance": "Date de naissance",
-      "date_adhesion": "Date d'adhésion",
-      "annee_adhesion": "Année d'adhésion",
-      "statut": "Statut",
-      "type_adhesion": "Type d'adhésion",
-      "montant": "Montant (€)",
-      "newsletter": "Newsletter",
-      "commentaire": "Commentaire"
+      "age": "Âge",
+      "activites": "Activités"
+    },
+    "computed": {
+      "age": {
+        "type": "ageFromDate",
+        "sourceColumn": "date_de_naissance",
+        "dateFormat": "YYYY-MM-DD"
+      }
     },
     "formats": {
-      "date_naissance": {
-        "type": "date",
-        "inputFormat": "YYYY-MM-DD",
-        "outputFormat": "DD/MM/YYYY"
-      },
-      "date_adhesion": {
+      "date_inscription": {
         "type": "date",
         "inputFormat": "YYYY-MM-DD",
         "outputFormat": "DD/MM/YYYY"
@@ -35,48 +36,152 @@
       "statut": {
         "type": "badge",
         "map": {
-          "actif": { "color": "#10b981", "variant": "solid" },
-          "inactif": { "color": "#ef4444", "variant": "solid" },
-          "en_attente": { "color": "#f59e0b", "variant": "outline" }
+          "actif": {
+            "color": "#10b981",
+            "variant": "solid"
+          },
+          "inactif": {
+            "color": "#ef4444",
+            "variant": "solid"
+          },
+          "suspendu": {
+            "color": "#f59e0b",
+            "variant": "outline"
+          }
         }
       },
-      "type_adhesion": {
-        "type": "badge",
-        "map": {
-          "individuel": { "color": "#3b82f6", "variant": "outline" },
-          "couple": { "color": "#8b5cf6", "variant": "outline" },
-          "famille": { "color": "#ec4899", "variant": "outline" }
-        }
+      "tags": {
+        "type": "splitBadges",
+        "separator": "|"
       },
       "email": {
         "type": "link",
         "linkType": "mailto"
-      },
-      "telephone": {
-        "type": "link",
-        "linkType": "tel"
       }
     }
   },
   "filters": {
-    "globalSearchColumns": ["nom", "prenom", "email", "ville", "telephone"],
-    "text": ["nom", "prenom", "ville"],
-    "dropdown": ["statut", "type_adhesion", "annee_adhesion"],
-    "dateRange": ["date_adhesion", "date_naissance"],
-    "numberRange": ["montant"],
-    "boolean": ["newsletter"]
+    "globalSearchColumns": [
+      "id_du_contact",
+      "nom",
+      "prenom",
+      "email",
+      "ville"
+    ],
+    "text": [
+      "nom",
+      "prenom"
+    ],
+    "dropdown": [
+      "statut",
+      "ville",
+      "activites"
+    ],
+    "dateRange": [
+      "date_inscription"
+    ],
+    "numberRange": [
+      "age"
+    ],
+    "boolean": []
   },
   "stats": {
     "cards": [
-      { "type": "count", "label": "Total adhérents" },
-      { "type": "countWhere", "label": "Adhérents actifs", "column": "statut", "value": "actif" },
-      { "type": "countWhere", "label": "Abonnés newsletter", "column": "newsletter", "value": "oui" }
+      {
+        "type": "count",
+        "label": "Total membres"
+      },
+      {
+        "type": "countWhere",
+        "label": "Adhérent",
+        "column": "statut_adherent",
+        "value": "Adhérent"
+      },
+      {
+        "type": "countWhere",
+        "label": "Non adhérent",
+        "column": "statut_adherent",
+        "value": "Non adhérent"
+      },
+      {
+        "type": "countWhere",
+        "label": "Ancien adhérent",
+        "column": "statut_adherent",
+        "value": "Ancien adhérent"
+      }
     ],
     "panels": [
-      { "type": "countByColumn", "column": "statut", "label": "Répartition par statut" },
-      { "type": "countByColumn", "column": "type_adhesion", "label": "Types d'adhésion" },
-      { "type": "countByColumn", "column": "annee_adhesion", "label": "Adhésions par année" },
-      { "type": "countByColumn", "column": "ville", "label": "Répartition géographique" }
+      {
+        "type": "numericStats",
+        "column": "age",
+        "label": "Statistiques d'âge",
+        "unit": "ans"
+      },
+      {
+        "type": "countByColumn",
+        "column": "statut",
+        "label": "Répartition par statut"
+      },
+      {
+        "type": "countByColumn",
+        "column": "categorie_de_membre",
+        "label": "typologie"
+      },
+      {
+        "type": "countByColumn",
+        "column": "statut_adherent",
+        "label": "Statut Adhésion"
+      },
+      {
+        "type": "countByColumn",
+        "column": "activites",
+        "label": "Activités"
+      },
+      {
+        "type": "countByColumn",
+        "column": "missions_nationales",
+        "label": "missions nationale"
+      },
+      {
+        "type": "countByColumn",
+        "column": "missions_regionales",
+        "label": "missions région"
+      },
+      {
+        "type": "countByColumn",
+        "column": "missions_de_secteur",
+        "label": "missions secteur"
+      },
+      {
+        "type": "countByColumn",
+        "column": "adherent_actif",
+        "label": "Adhérent Actif"
+      },
+      {
+        "type": "countByColumn",
+        "column": "region",
+        "label": "région"
+      },
+      {
+        "type": "countByColumn",
+        "column": "secteurgroupe_avancees",
+        "label": "secteur"
+      },
+      {
+        "type": "countByYearFromDate",
+        "column": "date_de_creation",
+        "label": "Inscriptions par année"
+      },
+      {
+        "type": "countByYearFromDate",
+        "column": "session_aimer_dans_la_duree",
+        "label": "AD par année"
+      },
+      {
+        "type": "countByYearFromDate",
+        "column": "session_amour_et_engagement",
+        "label": "AE par année"
+      }
     ]
   },
   "detailModal": {
@@ -84,19 +189,27 @@
     "sections": [
       {
         "title": "Informations personnelles",
-        "fields": ["nom", "prenom", "email", "telephone", "date_naissance"]
-      },
-      {
-        "title": "Adresse",
-        "fields": ["ville", "code_postal"]
+        "fields": [
+          "nom",
+          "prenom",
+          "email",
+          "ville",
+          "age"
+        ]
       },
       {
         "title": "Adhésion",
-        "fields": ["type_adhesion", "date_adhesion", "annee_adhesion", "statut", "montant", "newsletter"]
+        "fields": [
+          "date_inscription",
+          "statut",
+          "newsletter"
+        ]
       },
       {
-        "title": "Remarques",
-        "fields": ["commentaire"]
+        "title": "Compétences",
+        "fields": [
+          "tags"
+        ]
       }
     ]
   }

@@ -25,9 +25,9 @@ import {
   renameConfig as renameConfigInStorage,
   getSelectedConfigName,
   setSelectedConfig as setSelectedConfigInStorage,
-  isFirstUse,
 } from '../lib/storage/config-storage.ts';
 import { generateSchemaFingerprintFromData, findBestMatchingConfig } from '../lib/storage/config-matcher.ts';
+import { BUILT_IN_CONFIGS } from '../config/built-in-configs.ts';
 
 interface UsePaginationReturn {
   currentPage: number;
@@ -83,6 +83,24 @@ function isCSVFile(file: File): boolean {
   return file.name.endsWith('.csv') || file.type === 'text/csv';
 }
 
+function loadConfigsIncludingBuiltIns(): StoredConfig[] {
+  for (const builtInConfig of BUILT_IN_CONFIGS) {
+    saveConfig(builtInConfig.name, builtInConfig.config);
+  }
+
+  return loadAllConfigs();
+}
+
+function getStoredSelectedConfigName(): string | null {
+  const selectedConfigName = getSelectedConfigName();
+
+  if (!selectedConfigName || !loadConfig(selectedConfigName)) {
+    return null;
+  }
+
+  return selectedConfigName;
+}
+
 export function useAppState(): UseAppStateReturn {
   const [parsedData, setParsedData] = useState<DataRow[]>([]);
   const [availableSheetNames, setAvailableSheetNames] = useState<string[]>([]);
@@ -96,11 +114,8 @@ export function useAppState(): UseAppStateReturn {
   const [uploadedDataFile, setUploadedDataFile] = useState<File | null>(null);
 
   // Multi-config state with lazy initialization
-  const [savedConfigs, setSavedConfigs] = useState<StoredConfig[]>(() => loadAllConfigs());
-  const [selectedConfigName, setSelectedConfigName] = useState<string | null>(() => {
-    const selected = getSelectedConfigName();
-    return selected;
-  });
+  const [savedConfigs, setSavedConfigs] = useState<StoredConfig[]>(() => loadConfigsIncludingBuiltIns());
+  const [selectedConfigName, setSelectedConfigName] = useState<string | null>(() => getStoredSelectedConfigName());
   const [autoDetectedConfig, setAutoDetectedConfig] = useState<ConfigMatchResult | null>(null);
   const [isAutoDetectionEnabled, setIsAutoDetectionEnabled] = useState(true);
 
@@ -116,28 +131,6 @@ export function useAppState(): UseAppStateReturn {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- Initialization pattern for localStorage sync
         setAppliedConfig(stored.config);
       }
-    }
-  }, []);
-
-  // First-time user: load default VA-communauté config
-  useEffect((): void => {
-    if (isFirstUse()) {
-      fetch('/config-va-communaute.json')
-        .then((response) => response.json())
-        .then((vaConfig: unknown) => {
-          const validationResult = validateConfigAndReturnResult(vaConfig);
-
-          if (validationResult.isValid && validationResult.config) {
-            saveConfig('VA-communauté', validationResult.config);
-            setSelectedConfigInStorage('VA-communauté');
-            setSelectedConfigName('VA-communauté');
-            setAppliedConfig(validationResult.config);
-            setSavedConfigs(loadAllConfigs());
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to load default config:', error);
-        });
     }
   }, []);
 
